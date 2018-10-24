@@ -1,0 +1,61 @@
+// program :global_compound_statement
+// global_compound_statement:statement_local|func_def|class_def
+// class_def: KEY_CLASS variable {INHERIT variable} assignment_statement|class_func_def LBRCS  RBRCS
+// class_func_def: func variable LPAREN empty|expr(,expr)* RPAREN LBRCS statement_local RBRCS
+// func_def: func variable LPAREN empty|expr(,expr)* RPAREN LBRCS statement_local RBRCS
+// assignment_statement  :variable(,variable)* (ASSIGN|PLUS_EQ|MINUS_EQ|MULTI_EQ|DIV_EQ|MOD_EQ) expr(,expr)*
+// statement_local: expr|empty|break_statement|continue_statement|return_statement|if_statement|foreach_statement|assignment_statement|for_statement
+// foreach_statement: KEY_FOREACH variable COMMA variable ASSIGN expr LBRCS statement_local RBRCS
+// break_statement: KEY_BREAK
+// continue_statement: KEY_CONTINUE
+// if_statement: KEY_IF {assignment_statement SEMICOLON} expr LBRCS statement_local RBRCS (KEY_ELIF {assignment_statement SEMICOLON} expr LBRCS statement_local RBRCS)* {KEY_ELSE {assignment_statement SEMICOLON} expr LBRCS statement_local RBRCS}
+// return_statement: KEY_RETURN expr(,expr)|empty
+// for_statement: KEY_FOR (expr)|(assignment_statement|empty SEMICOLON expr|empty SEMICOLON expr|empty) LBRCS statement_local RBRCS
+
+// expr       :tuple(COMMA tuple)*
+// tuple      :or(OR or)*
+// or         :and(AND and)*
+// and        :compare((GREAT|LESS|GEQ|LEQ|EQUAL|NOT_EQ)compare)*
+// compare    :{NOT}not
+// not        :{VIRGULE}bitor
+// bitor      :xor (XOR xor)*
+// xor        :bitand(REF bitand)*
+// bitand     :shift (LSHIFT|RSHIFT shift)*
+// shift      :term((PLUS|MINUS)term)*
+// term       :negpos((MUL|DIV|MOD)negpos)*
+// negpos     :{PLUS|MINUS}factor
+// factor     :(REVERSE)reverse
+// reverse    :selfaddsub(PLUS_PLUS|MINUS_MINUS)
+// selfaddsub :attribute(QUOTE attribute)*
+// attribute  :index (LBRK expr RBRK)*
+// attribute  :index(LBRK expr:expr RBRK)*
+// index      :func_call(LPRNTH empty|tuple(,tuple)* RPRNTH)*
+// func_call  :{LBRK} list (COMMA list)* {LBRK}
+// list       :{LBRCS} tuple:tuple (COMMA tuple:tuple )* {LBRCS}|dict
+// dict       :variable|INTEGER|STRING|DOUBLE|BOOLEAN|NULL|LPRNTH expr RPRNTH
+// variable   :ID
+// empty      :
+
+
+
+
+||                      布尔“或”               or
+&&                      布尔“与”               and
+<，<=，>，>=，!=，==     比较                   compare
+!                       布尔“非”               not
+|                       按位或                 bitor
+^                       按位异或               xor
+&                       按位与                 bitand
+<<，>>                  移位                   shift
++，-                    加法与减法              term
+*，/，%                 乘法、除法与取余         negpos
++x，-x                  正负号                 factor
+x--,x++                 自增，自减             reverse
+~x                      按位翻转               selfaddsub
+x.attribute             属性参考               attribute
+x[index]                下标                   index
+x[index:index]          寻址段                 index
+f(arguments...)         函数调用               func_call
+[expression,...]        列表显示               list
+{key:datum,...}         字典显示               dict
+(variable)              绑定                   bind
