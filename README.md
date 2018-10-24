@@ -1,7 +1,8 @@
-# 基础类型： 整形，浮点，字符串，布尔，空值（nil）
-# 符合类型： 数组，只读数组（元组），字典<br>
-# 支持语句： if, elif, else, for, foreach, break, continue, return
-# 支持类型定义： class, func
+# 类型：
+## 基础类型： 整形，浮点，字符串，布尔，空值（nil）
+## 符合类型： 数组，只读数组（元组），字典<br>
+## 支持语句： if, elif, else, for, foreach, break, continue, return
+## 支持类型定义： class, func
 
 # 语法格式：
 ## 赋值语句--->
