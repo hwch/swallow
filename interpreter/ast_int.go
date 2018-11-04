@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -13,43 +13,48 @@ type Integer struct {
 
 func NewInteger(token *Token) *Integer {
 	num := &Integer{token: token}
-	typ := token.valueType
-	val := token.value
-	if typ == HEX_INT {
-		v, err := strconv.ParseInt(val[2:], 16, 64)
+	if token.valueType == INT {
+		v, err := strconv.Atoi(token.value)
 		if err != nil {
-			g_error.error(fmt.Sprintf("无效十六进制数字：%v,%v,%d:%d", val, err, token.line, token.pos))
+			g_error.error(fmt.Sprintf("无效十进制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
+		}
+		num.value = int64(v)
+	} else if token.valueType == HEX_INT {
+		v, err := strconv.ParseInt(token.value[2:], 16, 64)
+		if err != nil {
+			g_error.error(fmt.Sprintf("无效十六进制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
 		}
 		num.value = v
-	} else if typ == INT {
-		v, err := strconv.ParseInt(val, 10, 64)
+	} else if token.valueType == OCT_INT {
+		v, err := strconv.ParseInt(token.value, 8, 64)
 		if err != nil {
-			g_error.error(fmt.Sprintf("无效十进制数字：%v,%v,%d:%d", val, err, token.line, token.pos))
-		}
-		num.value = v
-	} else if typ == OCT_INT {
-		v, err := strconv.ParseInt(val, 8, 64)
-		if err != nil {
-			g_error.error(fmt.Sprintf("无效八制数字：%v,%v,%d:%d", val, err, token.line, token.pos))
+			g_error.error(fmt.Sprintf("无效八制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
 		}
 		num.value = v
 	} else {
-		g_error.error(fmt.Sprintf("无效整数类型：%v, %d:%d", val, token.line, token.pos))
+		g_error.error(fmt.Sprintf("无效整数类型：%v, %d:%d", token.value, token.line, token.pos))
 	}
 	num.v = num
 	return num
 }
 
-func (i *Integer) ofToken() *Token {
-	return i.token
+func (n *Integer) ofToken() *Token {
+	return n.token
 }
 
-func (n *Integer) visit() (interface{}, error) {
+func (n *Integer) Type() AstType {
+	return AST_INT
+}
+func (n *Integer) clone() AstNode {
+	return &Integer{token: n.token, value: n.value}
+}
+
+func (n *Integer) isPrint() bool {
+	return true
+}
+
+func (n *Integer) visit() (AstNode, error) {
 	return n, nil
-}
-
-func (n *Integer) eval() interface{} {
-	return n.value
 }
 
 func (n *Integer) String() string {
@@ -60,14 +65,14 @@ func (n *Integer) String() string {
 
 }
 
-func (n *Integer) neg() interface{} {
+func (n *Integer) neg() AstNode {
 	i := *n
 	i.value = -i.value
 
 	return &i
 }
 
-func (n *Integer) add(ast AstNode) interface{} {
+func (n *Integer) add(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -75,7 +80,7 @@ func (n *Integer) add(ast AstNode) interface{} {
 		}
 		return n.add(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value+val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value + val.value}
 	case *String:
 		return NewString(&Token{value: fmt.Sprintf("%d%s", n.value, val.value), valueType: STRING, pos: n.token.pos, line: n.token.line, file: n.token.file})
 	case *Double:
@@ -86,7 +91,7 @@ func (n *Integer) add(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) minus(ast AstNode) interface{} {
+func (n *Integer) minus(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -94,7 +99,7 @@ func (n *Integer) minus(ast AstNode) interface{} {
 		}
 		return n.minus(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value-val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value - val.value}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v-%v", n.token, ast))
 	case *Double:
@@ -105,7 +110,7 @@ func (n *Integer) minus(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) multi(ast AstNode) interface{} {
+func (n *Integer) multi(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -113,7 +118,7 @@ func (n *Integer) multi(ast AstNode) interface{} {
 		}
 		return n.multi(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value*val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value * val.value}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v*%v", n.token, ast))
 	case *Double:
@@ -124,7 +129,7 @@ func (n *Integer) multi(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) div(ast AstNode) interface{} {
+func (n *Integer) div(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -132,7 +137,7 @@ func (n *Integer) div(ast AstNode) interface{} {
 		}
 		return n.div(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value/val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value / val.value}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v/%v", n.token, val))
 	case *Double:
@@ -143,7 +148,7 @@ func (n *Integer) div(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) mod(ast AstNode) interface{} {
+func (n *Integer) mod(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -151,7 +156,7 @@ func (n *Integer) mod(ast AstNode) interface{} {
 		}
 		return n.mod(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value%val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value % val.value}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v %% %v", n.token, val))
 	case *Double:
@@ -162,7 +167,7 @@ func (n *Integer) mod(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) great(ast AstNode) interface{} {
+func (n *Integer) great(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -181,7 +186,7 @@ func (n *Integer) great(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) less(ast AstNode) interface{} {
+func (n *Integer) less(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -200,7 +205,7 @@ func (n *Integer) less(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) geq(ast AstNode) interface{} {
+func (n *Integer) geq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -219,7 +224,7 @@ func (n *Integer) geq(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) leq(ast AstNode) interface{} {
+func (n *Integer) leq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -238,7 +243,7 @@ func (n *Integer) leq(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) equal(ast AstNode) interface{} {
+func (n *Integer) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -257,19 +262,19 @@ func (n *Integer) equal(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Integer) plusplus() interface{} {
+func (n *Integer) plusplus() AstNode {
 	i := *n
 	n.value++
 	return &i
 }
 
-func (n *Integer) minusminus() interface{} {
+func (n *Integer) minusminus() AstNode {
 	i := *n
 	n.value--
 	return &i
 }
 
-func (n *Integer) bitor(ast AstNode) interface{} {
+func (n *Integer) bitor(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -277,14 +282,14 @@ func (n *Integer) bitor(ast AstNode) interface{} {
 		}
 		return n.bitor(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value|val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value | val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v|%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Integer) xor(ast AstNode) interface{} {
+func (n *Integer) xor(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -292,14 +297,14 @@ func (n *Integer) xor(ast AstNode) interface{} {
 		}
 		return n.xor(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value^val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value ^ val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v^%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Integer) bitand(ast AstNode) interface{} {
+func (n *Integer) bitand(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -307,14 +312,14 @@ func (n *Integer) bitand(ast AstNode) interface{} {
 		}
 		return n.bitand(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value&val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value & val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v&%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Integer) lshift(ast AstNode) interface{} {
+func (n *Integer) lshift(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -322,14 +327,14 @@ func (n *Integer) lshift(ast AstNode) interface{} {
 		}
 		return n.lshift(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value<<uint64(val.value)), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value << uint64(val.value)}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v<<%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Integer) rshift(ast AstNode) interface{} {
+func (n *Integer) rshift(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -337,7 +342,7 @@ func (n *Integer) rshift(ast AstNode) interface{} {
 		}
 		return n.rshift(val.result[0])
 	case *Integer:
-		return NewInteger(&Token{value: fmt.Sprintf("%d", n.value>>uint64(val.value)), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Integer{token: n.token, value: n.value >> uint64(val.value)}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v>>%v", n.token, ast))
 	}

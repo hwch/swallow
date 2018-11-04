@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -15,14 +15,14 @@ type StatementStack struct {
 }
 
 type ScopedSymbolTable struct {
-	vals           map[string]interface{}
+	vals           map[string]AstNode
 	scopeName      string
 	enclosingScope *ScopedSymbolTable
 	scopeLevel     int64
 }
 
 type BuiltinSymbolTable struct {
-	vals       map[string]interface{}
+	vals       map[string]AstNode
 	scopeName  string
 	scopeLevel int64
 }
@@ -36,14 +36,14 @@ func NewStatementStack() *StatementStack {
 
 func NewBuiltinSymbolTable(scopeName string) *BuiltinSymbolTable {
 	v := &BuiltinSymbolTable{}
-	v.vals = make(map[string]interface{})
+	v.vals = make(map[string]AstNode)
 	v.scopeName = scopeName
 	return v
 }
 
 func NewScopedSymbolTable(scopeName string, scopeLevel int64, scope *ScopedSymbolTable) *ScopedSymbolTable {
 	v := &ScopedSymbolTable{}
-	v.vals = make(map[string]interface{})
+	v.vals = make(map[string]AstNode)
 	v.scopeName = scopeName
 	v.scopeLevel = scopeLevel
 	v.enclosingScope = scope
@@ -93,22 +93,22 @@ func (s *StatementStack) String() string {
 	return ss
 }
 
-func (s *ScopedSymbolTable) set(val string, attr interface{}) {
+func (s *ScopedSymbolTable) set(val string, attr AstNode) {
 
 	s.vals[val] = attr
 }
 
-func (s *BuiltinSymbolTable) set(val string, attr interface{}) {
+func (s *BuiltinSymbolTable) set(val string, attr AstNode) {
 	s.vals[val] = attr
 }
-func (s *BuiltinSymbolTable) builtin(val string) (interface{}, bool) {
+func (s *BuiltinSymbolTable) builtin(val string) (AstNode, bool) {
 	if vv, ook := s.vals[val]; ook {
 		return vv, true
 	}
 	return nil, false
 }
 
-func (s *ScopedSymbolTable) lookup(val string) (interface{}, bool) {
+func (s *ScopedSymbolTable) lookup(val string) (AstNode, bool) {
 	if vv, ook := s.vals[val]; ook {
 		return vv, true
 	} else {
@@ -120,7 +120,7 @@ func (s *ScopedSymbolTable) lookup(val string) (interface{}, bool) {
 	return nil, false
 }
 
-func (s *ScopedSymbolTable) class_attr(val string) (interface{}, bool) {
+func (s *ScopedSymbolTable) class_attr(val string) (AstNode, bool) {
 	if vv, ook := s.vals[val]; ook {
 		return vv, true
 	}

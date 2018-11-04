@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -16,11 +16,19 @@ func NewDict(token *Token, vals map[string]AstNode) *Dict {
 	return l
 }
 
-func (d *Dict) visit() (interface{}, error) {
+func (d *Dict) isPrint() bool {
+	return true
+}
+
+func (d *Dict) Type() AstType {
+	return AST_DICT
+}
+
+func (d *Dict) visit() (AstNode, error) {
 	return d, nil
 }
 
-func (d *Dict) index(ast AstNode) interface{} {
+func (d *Dict) index(ast AstNode) AstNode {
 	v, ok := d.vals[fmt.Sprintf("%v", ast)]
 	if !ok {
 		g_error.error(fmt.Sprintf("无效KEY值[%v]", ast))
@@ -59,9 +67,9 @@ func (l *Dict) String() string {
 	return s
 }
 
-func (l *Dict) keys() []interface{} {
+func (l *Dict) keys() []AstNode {
 	iLen := len(l.vals)
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	i := 0
 	for k, _ := range l.vals {
 		v[i] = &String{token: l.ofToken(), value: k}
@@ -70,10 +78,10 @@ func (l *Dict) keys() []interface{} {
 	return v
 }
 
-func (l *Dict) values() []interface{} {
+func (l *Dict) values() []AstNode {
 	iLen := len(l.vals)
 
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	i := 0
 	for _, k := range l.vals {
 		v[i] = k

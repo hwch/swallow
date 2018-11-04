@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -16,8 +16,16 @@ func NewList(token *Token, vals []AstNode) *List {
 	return l
 }
 
-func (l *List) visit() (interface{}, error) {
+func (l *List) visit() (AstNode, error) {
 	return l, nil
+}
+
+func (l *List) isPrint() bool {
+	return true
+}
+
+func (l *List) Type() AstType {
+	return AST_LIST
 }
 
 func (l *List) String() string {
@@ -53,7 +61,7 @@ func (l *List) String() string {
 	return s
 }
 
-func (l *List) index(ast AstNode) interface{} {
+func (l *List) index(ast AstNode) AstNode {
 
 	_idx, err := ast.visit()
 	if err != nil {
@@ -68,7 +76,7 @@ func (l *List) index(ast AstNode) interface{} {
 	return l.vals[idx.value]
 }
 
-func (l *List) slice(begin, end AstNode) interface{} {
+func (l *List) slice(begin, end AstNode) AstNode {
 	var b, e int64
 	switch v := begin.(type) {
 	case *Integer:
@@ -91,19 +99,19 @@ func (l *List) slice(begin, end AstNode) interface{} {
 	return NewList(l.token, l.vals[b:e])
 }
 
-func (l *List) keys() []interface{} {
+func (l *List) keys() []AstNode {
 	iLen := len(l.vals)
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
 		v[i] = &Integer{token: l.ofToken(), value: int64(i)}
 	}
 	return v
 }
 
-func (l *List) values() []interface{} {
+func (l *List) values() []AstNode {
 	iLen := len(l.vals)
 
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
 		v[i] = l.vals[i]
 	}

@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"bufio"
@@ -172,5 +172,7 @@ func ReadFile(fstr string) {
 	f.Close()
 
 	NewSwallow(string(_data), fstr).interpreter()
-	fmt.Printf("%v\n", g_symbols)
+	if g_is_debug {
+		fmt.Printf("符号表[%v]\n", g_symbols)
+	}
 }

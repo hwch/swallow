@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -10,15 +10,27 @@ type String struct {
 	value string
 }
 
+func (s *String) isPrint() bool {
+	return true
+}
+
 func (s *String) ofToken() *Token {
 	return s.token
 }
 
+func (s *String) Type() AstType {
+	return AST_STRING
+}
+func (s *String) clone() AstNode {
+	return &String{token: s.token, value: s.value}
+}
+
 func unQuote(s string) string {
-	if s[0] == '"' {
+	if s[0] == '"' || s[0] == '\'' {
 		s = s[1:]
 	}
-	if s[len(s)-1] == '"' {
+	iLen := len(s)
+	if s[iLen-1] == '"' || s[iLen-1] == '\'' {
 		s = s[:len(s)-1]
 	}
 
@@ -32,7 +44,7 @@ func NewString(token *Token) *String {
 	return num
 }
 
-func (n *String) visit() (interface{}, error) {
+func (n *String) visit() (AstNode, error) {
 	return n, nil
 }
 
@@ -44,10 +56,7 @@ func (n *String) String() string {
 
 }
 
-func (n *String) eval() interface{} {
-	return n.value
-}
-func (n *String) add(ast AstNode) interface{} {
+func (n *String) add(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -55,9 +64,9 @@ func (n *String) add(ast AstNode) interface{} {
 		}
 		return n.add(val.result[0])
 	case *Integer:
-		return NewString(&Token{value: fmt.Sprintf("%d%s", n.value, val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &String{token: n.token, value: fmt.Sprintf("%d%s", n.value, val.value)}
 	case *String:
-		return NewString(&Token{value: n.value + val.value, valueType: STRING, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &String{token: n.token, value: n.value + val.value}
 	case *Double:
 		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
 	default:
@@ -66,7 +75,7 @@ func (n *String) add(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *String) great(ast AstNode) interface{} {
+func (n *String) great(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -85,7 +94,7 @@ func (n *String) great(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *String) less(ast AstNode) interface{} {
+func (n *String) less(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -104,7 +113,7 @@ func (n *String) less(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *String) geq(ast AstNode) interface{} {
+func (n *String) geq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -123,7 +132,7 @@ func (n *String) geq(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *String) leq(ast AstNode) interface{} {
+func (n *String) leq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -142,7 +151,7 @@ func (n *String) leq(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *String) equal(ast AstNode) interface{} {
+func (n *String) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -161,7 +170,7 @@ func (n *String) equal(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *String) index(ast AstNode) interface{} {
+func (n *String) index(ast AstNode) AstNode {
 	idx, ok := ast.(*Integer)
 	if !ok {
 		g_error.error(fmt.Sprintf("无效索引值[%v]", ast))
@@ -169,7 +178,7 @@ func (n *String) index(ast AstNode) interface{} {
 	return &String{token: n.token, value: n.value[idx.value : idx.value+1]}
 }
 
-func (n *String) slice(begin, end AstNode) interface{} {
+func (n *String) slice(begin, end AstNode) AstNode {
 	var b, e int64
 	switch v := begin.(type) {
 	case *Integer:
@@ -192,9 +201,9 @@ func (n *String) slice(begin, end AstNode) interface{} {
 	return &String{token: n.token, value: n.value[b:e]}
 }
 
-func (n *String) keys() []interface{} {
+func (n *String) keys() []AstNode {
 	iLen := len(n.value)
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
 		v[i] = &Integer{token: n.token, value: int64(i)}
 	}
@@ -202,9 +211,9 @@ func (n *String) keys() []interface{} {
 	return v
 }
 
-func (n *String) values() []interface{} {
+func (n *String) values() []AstNode {
 	iLen := len(n.value)
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
 		v[i] = &String{token: n.token, value: n.value[i : i+1]}
 	}

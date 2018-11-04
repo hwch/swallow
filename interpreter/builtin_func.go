@@ -1,11 +1,11 @@
-package interpreter
+package core
 
 import (
 	"fmt"
 	"os"
 )
 
-func builtin_func(f *Func) (interface{}, error) {
+func builtin_func(f *Func) (AstNode, error) {
 	switch f.name {
 	case "print":
 		vals := make([]interface{}, len(f.params.value))
@@ -17,7 +17,36 @@ func builtin_func(f *Func) (interface{}, error) {
 			vals[i] = _tmp
 		}
 		fmt.Println(vals...)
-		return NewEmpty(&Token{}), nil
+		return NewResult(nil, []AstNode{NewEmpty(nil)}), nil
+	case "list":
+		var iStart, iStop int64
+		switch len(f.params.value) {
+		case 1:
+			if v, ok := f.params.value[0].(*Integer); ok {
+				iStop = v.value
+			} else {
+				g_error.error(fmt.Sprintf("无效数值%v", f.params.value[0]))
+			}
+		case 2:
+			if v, ok := f.params.value[0].(*Integer); ok {
+				iStart = v.value
+			} else {
+				g_error.error(fmt.Sprintf("无效数值%v", f.params.value[0]))
+			}
+			if v, ok := f.params.value[1].(*Integer); ok {
+				iStop = v.value
+			} else {
+				g_error.error(fmt.Sprintf("无效数值%v", f.params.value[1]))
+			}
+		default:
+			g_error.error(fmt.Sprintf("参数个数[%v]超范围", len(f.params.value)))
+		}
+		buf := make([]AstNode, iStop-iStart)
+		var pos int64
+		for ; pos < iStop-iStart; pos++ {
+			buf[pos] = &Integer{token: nil, value: iStart + pos}
+		}
+		return NewResult(nil, []AstNode{NewTuple(nil, buf)}), nil
 	case "exit":
 		os.Exit(0)
 	}

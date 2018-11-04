@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -37,6 +37,9 @@ type Class struct {
 func (c *Class) define() {}
 func (f *Func) define()  {}
 
+func (c *Class) Type() AstType { return AST_CLASS }
+func (f *Func) Type() AstType  { return AST_FUNC }
+
 func NewClass(token *Token, name string, parent *Class, mems []AstNode, scope *ScopedSymbolTable) *Class {
 	cl := &Class{token: token, name: name, parent: parent, mems: mems, scope: scope}
 	cl.v = cl
@@ -68,11 +71,11 @@ func (c *Class) constructor() (*Func, error) {
 	return vv, nil
 }
 
-func (c *Class) visit() (interface{}, error) {
+func (c *Class) visit() (AstNode, error) {
 	return c, nil
 }
 
-func (c *Class) attribute(ast AstNode) interface{} {
+func (c *Class) attribute(ast AstNode) AstNode {
 	_mem, ok := c.scope.class_attr(ast.getName())
 
 	if !ok {
@@ -86,7 +89,7 @@ func (c *Class) attribute(ast AstNode) interface{} {
 	return _mem
 }
 
-func (c *Class) init() (interface{}, error) {
+func (c *Class) init() (AstNode, error) {
 	//初始化父类
 
 	if c.parent != nil {
@@ -118,11 +121,11 @@ func (c *Class) init() (interface{}, error) {
 	return c, nil
 }
 
-func (f *Func) visit() (interface{}, error) {
+func (f *Func) visit() (AstNode, error) {
 	return f, nil
 }
 
-func (f *Func) evaluation() (interface{}, error) {
+func (f *Func) evaluation() (AstNode, error) {
 	g_statement_stack.push("func")
 	defer func() {
 		g_statement_stack.pop()
@@ -139,7 +142,7 @@ func (f *Func) evaluation() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	} else if v == nil { //当函数没有返回值时，默认返回NULL
-		return NewEmpty(&Token{}), nil
+		return NewResult(f.body.ofToken(), []AstNode{NewEmpty(f.body.ofToken())}), nil
 	}
 
 	return v, nil

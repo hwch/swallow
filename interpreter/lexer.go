@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -180,7 +180,7 @@ func (l *Lexer) getChar() *Token {
 	}
 	l.cur_pos++ //跳过 '
 
-	return NewToken(CHAR, l.text[save_pos:l.cur_pos], line, save_pos, l.file)
+	return NewToken(STRING, l.text[save_pos:l.cur_pos], line, save_pos, l.file)
 }
 
 func (l *Lexer) getSymbolToken() *Token {

@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -27,12 +27,20 @@ func (d *Double) ofToken() *Token {
 	return d.token
 }
 
-func (n *Double) visit() (interface{}, error) {
-	return n, nil
+func (d *Double) isPrint() bool {
+	return true
 }
 
-func (n *Double) eval() interface{} {
-	return n.value
+func (d *Double) Type() AstType {
+	return AST_DOUBLE
+}
+
+func (d *Double) clone() AstNode {
+	return &Double{token: d.token, value: d.value}
+}
+
+func (n *Double) visit() (AstNode, error) {
+	return n, nil
 }
 
 func (n *Double) String() string {
@@ -42,12 +50,12 @@ func (n *Double) String() string {
 	return fmt.Sprintf("%f", n.value)
 }
 
-func (d Double) neg() interface{} {
+func (d *Double) neg() AstNode {
 	d.value = -d.value
 	return d
 }
 
-func (n *Double) add(ast AstNode) interface{} {
+func (n *Double) add(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -55,18 +63,18 @@ func (n *Double) add(ast AstNode) interface{} {
 		}
 		return n.add(val.result[0])
 	case *Integer:
-		return NewDouble(&Token{value: fmt.Sprintf("%f", n.value+float64(val.value)), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value + float64(val.value)}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
 	case *Double:
-		return NewDouble(&Token{value: fmt.Sprintf("%f", n.value+val.value), valueType: DOUBLE, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value + val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Double) minus(ast AstNode) interface{} {
+func (n *Double) minus(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -74,18 +82,18 @@ func (n *Double) minus(ast AstNode) interface{} {
 		}
 		return n.minus(val.result[0])
 	case *Integer:
-		return NewDouble(&Token{value: fmt.Sprintf("%f", n.value-float64(val.value)), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value - float64(val.value)}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v-%v", n.token, ast))
 	case *Double:
-		return NewDouble(&Token{value: fmt.Sprintf("%f", n.value-val.value), valueType: STRING, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value - val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v-%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Double) multi(ast AstNode) interface{} {
+func (n *Double) multi(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -93,18 +101,18 @@ func (n *Double) multi(ast AstNode) interface{} {
 		}
 		return n.multi(val.result[0])
 	case *Integer:
-		return NewDouble(&Token{value: fmt.Sprintf("%f", n.value*float64(val.value)), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value * float64(val.value)}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v*%v", n.token, ast))
 	case *Double:
-		return NewDouble(&Token{value: fmt.Sprintf("%f", n.value*val.value), valueType: STRING, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value * val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v*%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Double) div(ast AstNode) interface{} {
+func (n *Double) div(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -112,18 +120,18 @@ func (n *Double) div(ast AstNode) interface{} {
 		}
 		return n.div(val.result[0])
 	case *Integer:
-		return NewDouble(&Token{value: fmt.Sprintf("%d", n.value/float64(val.value)), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value / float64(val.value)}
 	case *String:
 		g_error.error(fmt.Sprintf("不支持%v/%v", n.token, val))
 	case *Double:
-		return NewDouble(&Token{value: fmt.Sprintf("%d", n.value/val.value), valueType: INT, pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Double{token: n.token, value: n.value / val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v/%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Double) great(ast AstNode) interface{} {
+func (n *Double) great(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -142,7 +150,7 @@ func (n *Double) great(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Double) less(ast AstNode) interface{} {
+func (n *Double) less(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -161,7 +169,7 @@ func (n *Double) less(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Double) geq(ast AstNode) interface{} {
+func (n *Double) geq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -180,7 +188,7 @@ func (n *Double) geq(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Double) leq(ast AstNode) interface{} {
+func (n *Double) leq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
@@ -199,7 +207,7 @@ func (n *Double) leq(ast AstNode) interface{} {
 	return nil
 }
 
-func (n *Double) equal(ast AstNode) interface{} {
+func (n *Double) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {

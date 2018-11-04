@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 func StringToBool(s string) bool {
 	if s == "True" {

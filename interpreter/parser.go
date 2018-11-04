@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -27,11 +27,6 @@ func (p *Parser) eat(tp TokenType, err string) {
 	} else {
 		g_error.error(err)
 	}
-}
-
-func (p *Parser) eatBack(curToken, prevToken *Token) {
-	p.currentToken = prevToken
-	p.lexer.rollback(curToken)
 }
 
 func (p *Parser) variable(scope *ScopedSymbolTable) *Variable {
@@ -275,7 +270,7 @@ func (p *Parser) reverse(scope *ScopedSymbolTable) AstNode {
 func (p *Parser) factor(scope *ScopedSymbolTable) AstNode {
 	token := p.currentToken
 	if token.valueType == REVERSE {
-		p.eat(MINUS,
+		p.eat(REVERSE,
 			fmt.Sprintf("期望是'~',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		return NewUnaryOperator(token, p.reverse(scope), scope)
 	}
@@ -302,7 +297,7 @@ func (p *Parser) negpos(scope *ScopedSymbolTable) AstNode {
 	token := p.currentToken
 
 	if token.valueType == MINUS || token.valueType == PLUS {
-		p.eat(MINUS,
+		p.eat(token.valueType,
 			fmt.Sprintf("期望是'-'或'+',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		return NewUnaryOperator(token, p.factor(scope), scope)
 	}
@@ -513,7 +508,6 @@ func (p *Parser) for_statement(scope *ScopedSymbolTable) *ForStatement {
 	var cond [3]AstNode
 	isTrdCond := false
 	if p.currentToken.valueType == KEY { //可能是赋值语句
-
 		myVar := p.expr(scope)
 		curToken := p.currentToken
 		if curToken.valueType == ASSIGN ||
@@ -525,13 +519,10 @@ func (p *Parser) for_statement(scope *ScopedSymbolTable) *ForStatement {
 			cond[0] = p.assign(myVar, scope)
 		} else {
 			cond[0] = myVar
-			if cond[0] == nil {
-				p.eat(SEMICOLON,
-					fmt.Sprintf("期望是';',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-				isTrdCond = true
-			}
 		}
-
+		isTrdCond = true
+		p.eat(SEMICOLON,
+			fmt.Sprintf("期望是';',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 	} else {
 		cond[0] = p.expr(scope)
 		if cond[0] == nil {
@@ -540,6 +531,7 @@ func (p *Parser) for_statement(scope *ScopedSymbolTable) *ForStatement {
 			isTrdCond = true
 		}
 	}
+
 	if isTrdCond {
 		cond[1] = p.expr(scope)
 		p.eat(SEMICOLON,
@@ -549,6 +541,7 @@ func (p *Parser) for_statement(scope *ScopedSymbolTable) *ForStatement {
 			cond[2] = nil
 		} else {
 			cond[2] = p.expr(scope)
+
 		}
 
 	} else {
@@ -563,7 +556,7 @@ func (p *Parser) for_statement(scope *ScopedSymbolTable) *ForStatement {
 		fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 	body := p.statement_local(scope)
 	p.eat(RBRCS,
-		fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		fmt.Sprintf("期望是'}',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 	/*-----------------------循环体-----------------------------*/
 
 	return NewForStatement(token, cond, body, scope)
@@ -955,11 +948,41 @@ func (p *Parser) global_compound_statement(scope *ScopedSymbolTable) *GlobalComp
 			myFunc := p.func_def(scope)
 			nodes[cnt] = myFunc
 			scope.set(myFunc.name, myFunc)
-		default:
-			nodes[cnt] = p.statement_local(scope)
-			if nodes[cnt] == nil {
-
+		case KEY_IF:
+			p.eat(KEY_IF,
+				fmt.Sprintf("期望是'if',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			nodes[cnt] = p.if_statement(scope)
+		case KEY_FOR:
+			p.eat(KEY_FOR,
+				fmt.Sprintf("期望是'if',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			nodes[cnt] = p.for_statement(scope)
+		case KEY_FOREACH:
+			p.eat(KEY_FOREACH,
+				fmt.Sprintf("期望是'foreach',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			nodes[cnt] = p.foreach_statement(scope)
+		case KEY_BREAK:
+			nodes[cnt] = p.break_statement(scope)
+		case KEY_CONTINUE:
+			nodes[cnt] = p.continue_statement(scope)
+		case KEY_RETURN:
+			p.eat(KEY_RETURN,
+				fmt.Sprintf("期望是'return',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			nodes[cnt] = p.return_statement(scope)
+		case KEY:
+			myVar := p.expr(scope)
+			curToken := p.currentToken
+			if curToken.valueType == ASSIGN ||
+				curToken.valueType == PLUS_EQ ||
+				curToken.valueType == MINUS_EQ ||
+				curToken.valueType == MULTI_EQ ||
+				curToken.valueType == DIV_EQ ||
+				curToken.valueType == MOD_EQ {
+				nodes[cnt] = p.assign(myVar, scope)
+			} else {
+				nodes[cnt] = myVar
 			}
+		default: //或是赋值 或是表达式
+			nodes[cnt] = p.expr(scope)
 		}
 
 	}
@@ -971,7 +994,6 @@ func (p *Parser) program(scope *ScopedSymbolTable) AstNode {
 }
 
 func (p *Parser) parser() {
-
 	_, err := p.program(g_symbols).visit()
 	if err != nil {
 		g_statement_stack.clear()

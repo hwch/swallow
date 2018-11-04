@@ -1,10 +1,11 @@
-package interpreter
+package core
 
 type TokenType uint64
 type TreeFlag uint64
 type State uint64
 type DataType uint64
 type SymTabKey uint64
+type AstType uint64
 
 const (
 	STATE_DOUBLE     State = 0xa001 //
@@ -63,6 +64,33 @@ const (
 	TREE_ROOT  TreeFlag = 0x10
 	TREE_LEFT  TreeFlag = 0x20
 	TREE_RIGHT TreeFlag = 0x40
+)
+
+const (
+	AST_INVALID   AstType = 0x00
+	AST_INT       AstType = 0x010
+	AST_STRING    AstType = 0x020
+	AST_DOUBLE    AstType = 0x030
+	AST_BOOL      AstType = 0x040
+	AST_FUNC      AstType = 0x050
+	AST_CLASS     AstType = 0x060
+	AST_BREAK     AstType = 0x070
+	AST_RETURN    AstType = 0x080
+	AST_CONTINUE  AstType = 0x090
+	AST_IF        AstType = 0x0a0
+	AST_FOR       AstType = 0x0b0
+	AST_FOREACH   AstType = 0x0c0
+	AST_NIL       AstType = 0x0c0
+	AST_RESULT    AstType = 0x0d0
+	AST_ASSIGN    AstType = 0x0e0
+	AST_STATEMENT AstType = 0x0f0
+	AST_EXPR      AstType = 0x100
+	AST_LIST      AstType = 0x110
+	AST_TUPLE     AstType = 0x120
+	AST_DICT      AstType = 0x130
+	AST_BIN_OP    AstType = 0x140
+	AST_VAR       AstType = 0x150
+	AST_FUNC_CALL AstType = 0x160
 )
 
 const (

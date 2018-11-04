@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -23,8 +23,24 @@ func NewBoolean(token *Token) *Boolean {
 	return b
 }
 
-func (n *Boolean) visit() (interface{}, error) {
+func NewBooleanByValue(token *Token, v bool) *Boolean {
+
+	return &Boolean{token: token, value: v}
+}
+
+func (n *Boolean) clone() AstNode {
+	return &Boolean{value: n.value, token: n.token}
+}
+
+func (n *Boolean) visit() (AstNode, error) {
 	return n, nil
+}
+
+func (n *Boolean) isPrint() bool {
+	return true
+}
+func (n *Boolean) Type() AstType {
+	return AST_BOOL
 }
 
 func (n *Boolean) _String() string {
@@ -42,76 +58,77 @@ func (n *Boolean) String() string {
 	return n._String()
 }
 
-func (n *Boolean) equal(ast AstNode) interface{} {
+func (n *Boolean) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
 			g_error.error(fmt.Sprintf("操作符==左右参数个数不一致%v,%v", n.token, val))
 		}
 		if iVal, ok := val.result[0].(*Boolean); ok {
-			return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value == iVal.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+			return &Boolean{value: n.value == iVal.value, token: n.token}
 		} else {
 			g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 		}
 	case *Boolean:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value == val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Boolean{value: n.value == val.value, token: n.token}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Boolean) noteq(ast AstNode) interface{} {
+func (n *Boolean) noteq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
 			g_error.error(fmt.Sprintf("操作符!=左右参数个数不一致%v,%v", n.token, val))
 		}
 		if iVal, ok := val.result[0].(*Boolean); ok {
-			return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value != iVal.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+			return &Boolean{value: n.value != iVal.value, token: n.token}
 		} else {
 			g_error.error(fmt.Sprintf("不支持%v!=%v", n.token, ast))
 		}
 	case *Boolean:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value != val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Boolean{value: n.value != val.value, token: n.token}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Boolean) and(ast AstNode) interface{} {
+func (n *Boolean) and(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
 			g_error.error(fmt.Sprintf("操作符==左右参数个数不一致%v,%v", n.token, val))
 		}
 		if iVal, ok := val.result[0].(*Boolean); ok {
-			return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value && iVal.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+			return &Boolean{value: n.value && iVal.value, token: n.token}
 		} else {
 			g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 		}
 	case *Boolean:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value && val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+		return &Boolean{value: n.value && val.value, token: n.token}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
 
-func (n *Boolean) or(ast AstNode) interface{} {
+func (n *Boolean) or(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Result:
 		if val.num != 1 {
 			g_error.error(fmt.Sprintf("操作符==左右参数个数不一致%v,%v", n.token, val))
 		}
 		if iVal, ok := val.result[0].(*Boolean); ok {
-			return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value || iVal.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+			return &Boolean{value: n.value || iVal.value, token: n.token}
 		} else {
 			g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 		}
 	case *Boolean:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value || val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
+
+		return &Boolean{value: n.value || val.value, token: n.token}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}

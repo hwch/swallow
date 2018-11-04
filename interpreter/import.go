@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 type Package struct {
 	file     string

@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 type Swallow struct {
 	parser *Parser

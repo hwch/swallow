@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -133,23 +133,34 @@ func (a *BreakStatement) statement()          {}
 func (a *ContinueStatement) statement()       {}
 func (a *ForStatement) statement()            {}
 
-func (a *AssignStatement) variable_visit(l *Variable, r AstNode) (interface{}, error) {
-	var ival interface{}
+func (a *AssignStatement) Type() AstType         { return AST_ASSIGN }
+func (a *GlobalCompoundStatement) Type() AstType { return AST_STATEMENT }
+func (a *LocalCompoundStatement) Type() AstType  { return AST_STATEMENT }
+func (a *IfStatement) Type() AstType             { return AST_IF }
+func (a *ReturnStatement) Type() AstType         { return AST_RETURN }
+func (a *ForeachStatement) Type() AstType        { return AST_FOREACH }
+func (a *BreakStatement) Type() AstType          { return AST_BREAK }
+func (a *ContinueStatement) Type() AstType       { return AST_CONTINUE }
+func (a *ForStatement) Type() AstType            { return AST_FOR }
+
+func (a *AssignStatement) variable_visit(l *Variable, r AstNode) (AstNode, error) {
+	if l.name == "_" {
+		return nil, nil
+	}
+	var ival AstNode
 	/* 等号右边求值 */
-	_v, err := r.visit()
+	v, err := r.visit()
 	if err != nil {
 		return nil, err
 	}
-	v, _ := _v.(AstNode)
 	if a.operator.valueType == ASSIGN {
 		ival = v //赋值
 	} else {
 		/* 等号左边求值 */
-		_ll, err := l.visit()
+		ll, err := l.visit()
 		if err != nil {
 			return nil, err
 		}
-		ll, _ := _ll.(AstNode)
 
 		switch a.operator.valueType { //赋值
 		case PLUS_EQ:
@@ -166,33 +177,31 @@ func (a *AssignStatement) variable_visit(l *Variable, r AstNode) (interface{}, e
 
 	}
 	/* 基础类型传值，复杂类型传引用 */
-	switch val := ival.(type) {
-	case *Integer:
-		tmp := *val
-		ival = &tmp
-	case *Boolean:
-		tmp := *val
-		ival = &tmp
-	case *String:
-		tmp := *val
-		ival = &tmp
-	case *Double:
-		tmp := *val
-		ival = &tmp
+
+	switch ival.Type() {
+	case AST_INT:
+		fallthrough
+	case AST_BOOL:
+		fallthrough
+	case AST_STRING:
+		fallthrough
+	case AST_DOUBLE:
+		ival = ival.clone()
 	}
 	a.scope.set(l.name, ival)
 
 	return nil, nil
 }
 
-func (a *AssignStatement) tuple_visit(l *Tuple) (interface{}, error) {
+func (a *AssignStatement) tuple_visit(l *Tuple) (AstNode, error) {
 	if a.operator.valueType != ASSIGN {
 		return nil, fmt.Errorf("非法操作符[%v],位置[%v:%v:%v]", a.operator.valueType,
 			a.operator.file, a.operator.line, a.operator.pos)
 	}
 	var myVar *Variable
-	switch r := a.right.(type) {
-	case *Tuple: // 赋值第3类情况
+	switch a.right.Type() {
+	case AST_TUPLE: // 赋值第3类情况
+		r := a.right.(*Tuple)
 		if len(r.vals) != len(l.vals) {
 			g_error.error(fmt.Sprintf("左变量个数[%v],右值个数[%v]不相同,位置[%v:%v:%v]",
 				len(l.vals), len(r.vals), a.operator.file, a.operator.line, a.operator.pos))
@@ -217,13 +226,13 @@ func (a *AssignStatement) tuple_visit(l *Tuple) (interface{}, error) {
 				return nil, err
 			}
 		}
-	case *FuncCallOperator: // 赋值第3类情况
+	case AST_FUNC_CALL: // 赋值第3类情况
 
-		_ret, err := r.visit()
+		_ret, err := a.right.visit()
 		if err != nil {
 			return nil, err
 		}
-		rt, _ := _ret.(*Result)
+		rt := _ret.(*Result)
 		if len(rt.result) != len(l.vals) {
 			g_error.error(fmt.Sprintf("左变量个数[%v],右值个数[%v]不相同,位置[%v:%v:%v]",
 				len(l.vals), len(rt.result), a.operator.file, a.operator.line, a.operator.pos))
@@ -256,7 +265,7 @@ func (a *AssignStatement) tuple_visit(l *Tuple) (interface{}, error) {
 	return nil, nil
 }
 
-func (a *AssignStatement) visit() (interface{}, error) {
+func (a *AssignStatement) visit() (AstNode, error) {
 	// 赋值分3类情况
 	// 1. tuple=tuple
 	// 2. variable=tuple
@@ -265,13 +274,15 @@ func (a *AssignStatement) visit() (interface{}, error) {
 	var myVar *Variable
 	var right AstNode
 
-	switch l := a.left.(type) {
-	case *Tuple: // 赋值第1,3类情况
-		return a.tuple_visit(l)
-	case *Variable: // 赋值第2类情况
-		myVar = l
+	switch a.left.Type() {
+	case AST_VAR: // 赋值第2类情况
+		myVar = a.left.(*Variable)
 		right = a.right
-	case *BinOperator: // 赋值第2类情况
+	case AST_TUPLE: // 赋值第1,3类情况
+		l := a.left.(*Tuple)
+		return a.tuple_visit(l)
+	case AST_BIN_OP: // 赋值第2类情况
+		l := a.left.(*BinOperator)
 		if l.operator.valueType == QUOTE { // 成员引用
 			_cls, err := l.left.visit()
 			if err != nil {
@@ -335,15 +346,15 @@ func (a *AssignStatement) visit() (interface{}, error) {
 
 }
 
-func (c *ContinueStatement) visit() (interface{}, error) {
+func (c *ContinueStatement) visit() (AstNode, error) {
 	return c, nil
 }
 
-func (b *BreakStatement) visit() (interface{}, error) {
+func (b *BreakStatement) visit() (AstNode, error) {
 	return b, nil
 }
 
-func (r *ReturnStatement) visit() (interface{}, error) {
+func (r *ReturnStatement) visit() (AstNode, error) {
 	iLen := len(r.results)
 	nodes := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
@@ -351,15 +362,11 @@ func (r *ReturnStatement) visit() (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		if v, ok := res.(AstNode); ok {
-			nodes[i] = v
-		} else {
-			return nil, fmt.Errorf("无效返回值类型:%v", res)
-		}
+		nodes[i] = res
 	}
 	return NewResult(r.token, nodes), nil
 }
-func (i *IfStatement) visit() (interface{}, error) {
+func (i *IfStatement) visit() (AstNode, error) {
 	g_statement_stack.push("if")
 	defer func() {
 		g_statement_stack.pop()
@@ -382,20 +389,7 @@ func (i *IfStatement) visit() (interface{}, error) {
 	}
 
 	if bl.value { // 第一个if
-		_vv, _err := i.body.visit()
-
-		switch _vv.(type) {
-		case *BreakStatement:
-			return _vv, _err
-		case *ContinueStatement:
-			return _vv, _err
-		case *Result:
-			return _vv, _err
-		default:
-			if _err != nil {
-				return nil, _err
-			}
-		}
+		return i.body.visit()
 	} else { // 其他elif 或 else
 		for j := 0; j < len(i.elif); j++ {
 			v := i.elif[j]
@@ -415,37 +409,78 @@ func (i *IfStatement) visit() (interface{}, error) {
 			}
 
 			if bl.value {
-				_vv, _err := v.body.visit()
-
-				switch _vv.(type) {
-				case *BreakStatement:
-					return _vv, _err
-				case *ContinueStatement:
-					return _vv, _err
-				case *Result:
-					return _vv, _err
-				default:
-					if _err != nil {
-						return nil, _err
-					}
-				}
-
-				break
+				return v.body.visit()
 			}
 		}
 	}
 	return nil, nil
 }
 
-func (f *ForeachStatement) visit() (interface{}, error) {
-	var ret interface{}
+func (f *ForeachStatement) visit_list() (AstNode, error) {
+	iFunc := f.expr.(*FuncCallOperator)
+	var iStart, iStop int64
+
+	switch len(iFunc.params) {
+	case 1:
+		if v, ok := iFunc.params[0].(*Integer); ok {
+			iStop = v.value
+		} else {
+			g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[0]))
+		}
+	case 2:
+		if v, ok := iFunc.params[0].(*Integer); ok {
+			iStart = v.value
+		} else {
+			g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[0]))
+		}
+		if v, ok := iFunc.params[1].(*Integer); ok {
+			iStop = v.value
+		} else {
+			g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[1]))
+		}
+	default:
+		g_error.error(fmt.Sprintf("参数个数[%v]超范围", len(iFunc.params)))
+	}
+	var pos int64
+	var ret AstNode
+	var oerr error
+FOREACH_STATEMENT_LOOP1:
+	for ; pos < iStop-iStart; pos++ {
+		if f.first.name != "_" {
+			f.scope.set(f.first.name, &Integer{token: f.first.token, value: pos}) //给第一个值赋值
+		}
+		if f.second.name != "_" {
+			f.scope.set(f.second.name, &Integer{token: f.second.token, value: iStart + pos}) //给第二个值赋值
+		}
+
+		ret, oerr = f.nodes.visit()
+		if oerr != nil {
+			return nil, oerr
+		}
+		switch ret.(type) {
+		case *BreakStatement:
+			break FOREACH_STATEMENT_LOOP1
+		case *ContinueStatement:
+			// 啥都不会做...
+		case *Result:
+			return ret, oerr
+		}
+	}
+	return nil, nil
+}
+
+func (f *ForeachStatement) visit() (AstNode, error) {
+	var ret AstNode
 	var oerr error
 	g_statement_stack.push("for")
 	defer func() {
 		g_statement_stack.pop()
 	}()
-	var keys, values []interface{}
+	var keys, values []AstNode
 
+	if f.expr.Type() == AST_FUNC_CALL && f.expr.getName() == "list" {
+		return f.visit_list()
+	}
 	_expr, err := f.expr.visit()
 	if err != nil {
 		return nil, err
@@ -455,7 +490,7 @@ func (f *ForeachStatement) visit() (interface{}, error) {
 		if expr.num != 1 {
 			return nil, fmt.Errorf("foreach操作值[%d]个数[%d]不为1", f.expr, expr.num)
 		}
-		v, ok := expr.result[0].(Iterator)
+		v, ok := expr.at(0).(Iterator)
 		if !ok {
 			return nil, fmt.Errorf("[%v]不支持foreach操作", f.expr)
 		}
@@ -474,7 +509,9 @@ FOREACH_STATEMENT_LOOP:
 		f.scope.set(f.second.name, values[i]) //给第二个值赋值
 
 		ret, oerr = f.nodes.visit()
-
+		if oerr != nil {
+			return nil, oerr
+		}
 		switch ret.(type) {
 		case *BreakStatement:
 			break FOREACH_STATEMENT_LOOP
@@ -483,17 +520,14 @@ FOREACH_STATEMENT_LOOP:
 		case *Result:
 			return ret, oerr
 		}
-		if oerr != nil {
-			return nil, oerr
-		}
 
 	}
 
 	return nil, nil
 }
 
-func (f *ForStatement) visit() (interface{}, error) {
-	var ret interface{}
+func (f *ForStatement) visit() (AstNode, error) {
+	var ret AstNode
 	var oerr error
 	g_statement_stack.push("for")
 	defer func() {
@@ -525,19 +559,18 @@ FORSTATEMENT_LOOP:
 		}
 
 		ret, oerr = f.body.visit()
-
-		switch ret.(type) {
-		case *BreakStatement:
-			break FORSTATEMENT_LOOP
-		case *ContinueStatement:
-			// 啥都不会做...
-		case *Result:
-			return ret, oerr
-		default:
-			if oerr != nil {
-				return nil, oerr
+		if oerr != nil {
+			return nil, oerr
+		}
+		if ret != nil {
+			switch ret.Type() {
+			case AST_BREAK:
+				break FORSTATEMENT_LOOP
+			case AST_RESULT:
+				return ret, oerr
 			}
 		}
+
 		if f.condition[2] != nil { /* 第三个语句求值 */
 			if _, err := f.condition[2].visit(); err != nil {
 				return nil, err
@@ -549,10 +582,10 @@ FORSTATEMENT_LOOP:
 
 }
 
-func (p *LocalCompoundStatement) visit() (interface{}, error) {
+func (p *LocalCompoundStatement) visit() (AstNode, error) {
 
 	for i := 0; i < len(p.nodes); i++ {
-		isPrint := false
+
 		switch p.nodes[i].(type) {
 		case *ReturnStatement:
 			isFound := false
@@ -579,7 +612,7 @@ func (p *LocalCompoundStatement) visit() (interface{}, error) {
 			if !isFound {
 				return nil, fmt.Errorf("break不能再循环外")
 			}
-
+			return p.nodes[i], nil
 		case *ContinueStatement:
 			isFound := false
 			for !g_statement_stack.isEmpty() {
@@ -592,33 +625,34 @@ func (p *LocalCompoundStatement) visit() (interface{}, error) {
 			if !isFound {
 				return nil, fmt.Errorf("continue不能再循环外")
 			}
-
-		case Statement:
-		default:
-			if g_statement_stack.value() == "" && p.token.file == "<stdin>" {
-				isPrint = true
-
-			}
+			return p.nodes[i], nil
 		}
-		node, err := p.nodes[i].visit()
+		_, err := p.nodes[i].visit()
 		if err != nil {
 			return nil, err
-		}
-		if isPrint {
-			// if _, ok := node.(*Empty); !ok {
-			fmt.Printf("%v\n", node)
-			// }
 		}
 
 	}
 	return nil, nil
 }
 
-func (p *GlobalCompoundStatement) visit() (interface{}, error) {
+func (p *GlobalCompoundStatement) visit() (AstNode, error) {
+
 	for i := 0; i < len(p.nodes); i++ {
-		_, err := p.nodes[i].visit()
+		res, err := p.nodes[i].visit()
 		if err != nil {
 			return nil, err
+		}
+		if res != nil && res.isPrint() {
+			if _, ok := res.(*Result); ok {
+				ss := fmt.Sprintf("%v", res)
+				if ss != "nil" {
+					fmt.Println(ss)
+				}
+			} else {
+				fmt.Printf("%v\n", res)
+			}
+
 		}
 
 	}

@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -16,7 +16,15 @@ func NewTuple(token *Token, vals []AstNode) *Tuple {
 	return l
 }
 
-func (l *Tuple) visit() (interface{}, error) {
+func (l *Tuple) isPrint() bool {
+	return true
+}
+
+func (l *Tuple) Type() AstType {
+	return AST_TUPLE
+}
+
+func (l *Tuple) visit() (AstNode, error) {
 
 	return l, nil
 }
@@ -54,7 +62,7 @@ func (l *Tuple) String() string {
 	return s
 }
 
-func (l *Tuple) index(ast AstNode) interface{} {
+func (l *Tuple) index(ast AstNode) AstNode {
 	idx, ok := ast.(*Integer)
 	if !ok {
 		g_error.error(fmt.Sprintf("无效索引值[%v]", ast))
@@ -62,7 +70,7 @@ func (l *Tuple) index(ast AstNode) interface{} {
 	return l.vals[idx.value]
 }
 
-func (l *Tuple) slice(begin, end AstNode) interface{} {
+func (l *Tuple) slice(begin, end AstNode) AstNode {
 	var b, e int64
 	switch v := begin.(type) {
 	case *Integer:
@@ -85,19 +93,19 @@ func (l *Tuple) slice(begin, end AstNode) interface{} {
 	return NewTuple(l.token, l.vals[b:e])
 }
 
-func (l *Tuple) keys() []interface{} {
+func (l *Tuple) keys() []AstNode {
 	iLen := len(l.vals)
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
 		v[i] = &Integer{token: l.ofToken(), value: int64(i)}
 	}
 	return v
 }
 
-func (l *Tuple) values() []interface{} {
+func (l *Tuple) values() []AstNode {
 	iLen := len(l.vals)
 
-	v := make([]interface{}, iLen)
+	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
 		v[i] = l.vals[i]
 
