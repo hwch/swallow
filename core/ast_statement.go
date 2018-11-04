@@ -293,8 +293,12 @@ func (a *AssignStatement) visit() (AstNode, error) {
 				return nil, fmt.Errorf("无效运算%v.%v,位置[%v:%v:%v]",
 					l.left, l.right, l.operator.file, l.operator.line, l.operator.pos)
 			}
+			if rv, err := a.right.visit(); err != nil {
+				return nil, err
+			} else {
+				cls.scope.set(fmt.Sprintf("%v", l.right), rv)
+			}
 
-			cls.scope.set(fmt.Sprintf("%v", l.right), a.right)
 		} else if l.operator.valueType == LBRK {
 			_val, err := l.left.visit()
 			if err != nil {
@@ -419,28 +423,34 @@ func (i *IfStatement) visit() (AstNode, error) {
 func (f *ForeachStatement) visit_list() (AstNode, error) {
 	iFunc := f.expr.(*FuncCallOperator)
 	var iStart, iStop int64
+	iTotal := len(iFunc.params)
 
-	switch len(iFunc.params) {
-	case 1:
-		if v, ok := iFunc.params[0].(*Integer); ok {
+	if iTotal == 0 || iTotal > 2 {
+		g_error.error(fmt.Sprintf("需要参数个数[2]传入参数个数[%v]", iTotal))
+	} else {
+		ret, err := iFunc.params[0].visit()
+		if err != nil {
+			return nil, err
+		}
+		if v, ok := ret.(*Integer); ok {
 			iStop = v.value
 		} else {
 			g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[0]))
 		}
-	case 2:
-		if v, ok := iFunc.params[0].(*Integer); ok {
-			iStart = v.value
-		} else {
-			g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[0]))
+		if iTotal == 2 {
+			iStart = iStop
+			ret, err := iFunc.params[1].visit()
+			if err != nil {
+				return nil, err
+			}
+			if v, ok := ret.(*Integer); ok {
+				iStop = v.value
+			} else {
+				g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[1]))
+			}
 		}
-		if v, ok := iFunc.params[1].(*Integer); ok {
-			iStop = v.value
-		} else {
-			g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[1]))
-		}
-	default:
-		g_error.error(fmt.Sprintf("参数个数[%v]超范围", len(iFunc.params)))
 	}
+
 	var pos int64
 	var ret AstNode
 	var oerr error
