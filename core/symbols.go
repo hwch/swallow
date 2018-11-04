@@ -121,7 +121,7 @@ func (s *ScopedSymbolTable) lookup(val string) (AstNode, bool) {
 }
 
 func (s *ScopedSymbolTable) class_attr(val string) (AstNode, bool) {
-	println(s.scopeName, s.scopeLevel)
+
 	if vv, ook := s.vals[val]; ook {
 		return vv, true
 	}

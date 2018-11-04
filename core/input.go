@@ -9,7 +9,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"sync"
+	// "sync"
 )
 
 var g_is_exit bool
@@ -80,52 +80,8 @@ func scanf(str *string) (err error) {
 	return
 }
 
-func _ReadStdin(wg *sync.WaitGroup) {
-	buf := ""
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Printf("%v\n", err) // 这里的err其实就是panic传入的内容，55
-		}
-		wg.Done()
-	}()
-	for {
-		print("==> ")
-		err := scanf(&buf)
-		if err != nil {
-			if err != io.EOF {
-				fmt.Printf("Read stdin failed: %v\n", err)
-			} else {
-				println()
-				g_is_exit = true
-			}
-			return
-		}
-		buf = strings.Trim(buf, "\r\n")
-		if len(buf) <= 0 {
-			continue
-		} else if buf == "exit" {
-			println("请用 exit() 或 Ctrl-D 退出")
-			continue
-		}
-		NewSwallow(buf, "<stdin>").interpreter()
-		if g_is_debug {
-			fmt.Printf("符号表[%v]\n", g_symbols)
-		}
-	}
-}
-
 func ReadStdin() {
-	// var wg sync.WaitGroup
 
-	// for true {
-	// 	wg.Add(1)
-	// 	go _ReadStdin(&wg)
-	// 	wg.Wait()
-	// 	if g_is_exit {
-	// 		println("###############")
-	// 		break
-	// 	}
-	// }
 	buf := ""
 
 	for !g_is_exit {
@@ -140,7 +96,7 @@ func ReadStdin() {
 			}
 			return
 		}
-		buf = strings.Trim(buf, "\r\n")
+		buf = strings.Trim(buf, " \t\r\n")
 		if len(buf) <= 0 {
 			continue
 		} else if buf == "exit" {
