@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	swallow "swallow/interpreter"
+	swallow "swallow/core"
 )
 
 func main() {
