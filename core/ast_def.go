@@ -92,7 +92,7 @@ func (c *Class) attribute(ast AstNode) AstNode {
 func (c *Class) init() (AstNode, error) {
 	//初始化父类
 
-	if c.parent != nil {
+	if c.parent != nil && c.parent.name == "Object" {
 		_, err := c.parent.init()
 		if err != nil {
 			return nil, err
@@ -106,18 +106,17 @@ func (c *Class) init() (AstNode, error) {
 			return nil, err
 		}
 	}
+	c.scope.set("this", c)
 
 	//调用构造函数
-
 	v, err := c.constructor()
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := v.visit(); err != nil {
+	if _, err := v.evaluation(); err != nil {
 		return nil, err
 	}
-	c.scope.set("this", c)
 	return c, nil
 }
 
@@ -126,6 +125,7 @@ func (f *Func) visit() (AstNode, error) {
 }
 
 func (f *Func) evaluation() (AstNode, error) {
+
 	g_statement_stack.push("func")
 	defer func() {
 		g_statement_stack.pop()
@@ -154,9 +154,11 @@ func (p *Param) set(parms []AstNode) {
 	}
 
 	p.value = parms
+
 }
 
 func (p *Param) visit() (interface{}, error) {
+
 	cnt := len(p.value)
 
 	for i := 0; i < cnt; i++ {
