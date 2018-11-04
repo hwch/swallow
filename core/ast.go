@@ -42,7 +42,6 @@ type AstNode interface {
 
 	getName() string //打印用
 	ofToken() *Token //获取token
-	isPrint() bool   //判断是否需要打印，statement,define不打印，其他的打印
 	Type() AstType   // 获取类型
 	clone() AstNode  // 复制对象
 }
@@ -212,10 +211,6 @@ func (a Ast) getName() string {
 func (a Ast) ofToken() *Token {
 	g_error.error(fmt.Sprintf("%v未实现ofToken()方法", a))
 	return nil
-}
-
-func (a Ast) isPrint() bool {
-	return false
 }
 
 func (a Ast) Type() AstType {

@@ -637,13 +637,18 @@ func (p *LocalCompoundStatement) visit() (AstNode, error) {
 }
 
 func (p *GlobalCompoundStatement) visit() (AstNode, error) {
-
+	isPrint := false
 	for i := 0; i < len(p.nodes); i++ {
+		switch p.nodes[i].(type) {
+		case Define, Statement:
+		default:
+			isPrint = true
+		}
 		res, err := p.nodes[i].visit()
 		if err != nil {
 			return nil, err
 		}
-		if res != nil && res.isPrint() {
+		if res != nil && isPrint {
 			if _, ok := res.(*Result); ok {
 				ss := fmt.Sprintf("%v", res)
 				if ss != "nil" {

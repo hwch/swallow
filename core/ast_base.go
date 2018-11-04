@@ -280,14 +280,6 @@ func (e *FuncCallOperator) ofToken() *Token  { return e.token }
 func (e *TrdOperator) ofToken() *Token       { return e.token }
 func (e *SelfAfterOperator) ofToken() *Token { return e.operator }
 
-func (e *Empty) isPrint() bool             { return true }
-func (e *Variable) isPrint() bool          { return true }
-func (e *UnaryOperator) isPrint() bool     { return true }
-func (e *BinOperator) isPrint() bool       { return true }
-func (e *FuncCallOperator) isPrint() bool  { return true }
-func (e *TrdOperator) isPrint() bool       { return true }
-func (e *SelfAfterOperator) isPrint() bool { return true }
-
 func (e *Empty) Type() AstType             { return AST_NIL }
 func (e *Variable) Type() AstType          { return AST_VAR }
 func (e *UnaryOperator) Type() AstType     { return AST_EXPR }
