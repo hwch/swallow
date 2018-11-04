@@ -1,4 +1,4 @@
-package interpreter
+package core
 
 import (
 	"fmt"
@@ -95,7 +95,7 @@ func (f *FuncCallOperator) getName() string {
 	return f.name
 }
 
-func (f *FuncCallOperator) visit() (interface{}, error) {
+func (f *FuncCallOperator) visit() (AstNode, error) {
 	var ok bool
 	var _fn interface{}
 	if _fn, ok = f.scope.lookup(f.name); !ok {
@@ -125,7 +125,7 @@ func (v *Variable) getName() string {
 	return v.name
 }
 
-func (n *Variable) visit() (interface{}, error) {
+func (n *Variable) visit() (AstNode, error) {
 
 	sv, sok := n.scope.lookup(n.name)
 	if !sok {
@@ -135,12 +135,11 @@ func (n *Variable) visit() (interface{}, error) {
 	return sv, nil
 }
 
-func (b *BinOperator) visit() (interface{}, error) {
-	left, err0 := b.left.visit()
+func (b *BinOperator) visit() (AstNode, error) {
+	lv, err0 := b.left.visit()
 	if err0 != nil {
 		return nil, err0
 	}
-	lv, _ := left.(AstNode)
 
 	switch b.operator.valueType {
 	case PLUS:
@@ -188,32 +187,25 @@ func (b *BinOperator) visit() (interface{}, error) {
 	return nil, fmt.Errorf("不支持此操作:%v", b.operator.valueType)
 }
 
-func (s *SelfAfterOperator) visit() (interface{}, error) {
+func (s *SelfAfterOperator) visit() (AstNode, error) {
 	iVal, err := s.node.visit()
 	if err != nil {
 		return nil, err
 	}
-	v, ok := iVal.(AstNode)
-	if !ok {
-		return nil, fmt.Errorf("无效类型[%v]", iVal)
-	}
 	if s.operator.valueType == PLUS_PLUS {
-		return v.plusplus(), nil
+		return iVal.plusplus(), nil
 	} else if s.operator.valueType == MINUS_MINUS {
-		return v.minusminus(), nil
+		return iVal.minusminus(), nil
 	}
 	return nil, fmt.Errorf("值[%v]不支持'%v'操作", iVal, s.operator.valueType)
 }
 
-func (u *UnaryOperator) visit() (interface{}, error) {
-	iVal, err := u.node.visit()
+func (u *UnaryOperator) visit() (AstNode, error) {
+	v, err := u.node.visit()
 	if err != nil {
 		return nil, err
 	}
-	v, ok := iVal.(AstNode)
-	if !ok {
-		return nil, fmt.Errorf("值[%v]不支持'%v'操作", iVal, u.operator.valueType)
-	}
+
 	if u.operator.valueType == MINUS {
 		return v.neg(), nil
 	} else if u.operator.valueType == NOT {
@@ -227,11 +219,11 @@ func (u *UnaryOperator) visit() (interface{}, error) {
 	return v, nil
 }
 
-func (t *TrdOperator) visit() (interface{}, error) {
+func (t *TrdOperator) visit() (AstNode, error) {
 	return t.node.slice(t.left, t.right), nil
 }
 
-func (e *Empty) visit() (interface{}, error) {
+func (e *Empty) visit() (AstNode, error) {
 	return e, nil
 }
 
@@ -287,3 +279,19 @@ func (e *BinOperator) ofToken() *Token       { return e.operator }
 func (e *FuncCallOperator) ofToken() *Token  { return e.token }
 func (e *TrdOperator) ofToken() *Token       { return e.token }
 func (e *SelfAfterOperator) ofToken() *Token { return e.operator }
+
+func (e *Empty) isPrint() bool             { return true }
+func (e *Variable) isPrint() bool          { return true }
+func (e *UnaryOperator) isPrint() bool     { return true }
+func (e *BinOperator) isPrint() bool       { return true }
+func (e *FuncCallOperator) isPrint() bool  { return true }
+func (e *TrdOperator) isPrint() bool       { return true }
+func (e *SelfAfterOperator) isPrint() bool { return true }
+
+func (e *Empty) Type() AstType             { return AST_NIL }
+func (e *Variable) Type() AstType          { return AST_VAR }
+func (e *UnaryOperator) Type() AstType     { return AST_EXPR }
+func (e *BinOperator) Type() AstType       { return AST_BIN_OP }
+func (e *FuncCallOperator) Type() AstType  { return AST_FUNC_CALL }
+func (e *TrdOperator) Type() AstType       { return AST_EXPR }
+func (e *SelfAfterOperator) Type() AstType { return AST_EXPR }
