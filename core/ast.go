@@ -32,7 +32,7 @@ type AstNode interface {
 	bitand(ast AstNode) AstNode
 	lshift(ast AstNode) AstNode
 	rshift(ast AstNode) AstNode
-	attribute(ast AstNode) AstNode
+	attribute(isAccess bool, ast AstNode) AstNode
 	index(ast AstNode) AstNode
 	slice(begin, end AstNode) AstNode
 	neg() AstNode
@@ -161,7 +161,7 @@ func (a Ast) rshift(ast AstNode) AstNode {
 	return nil
 }
 
-func (a Ast) attribute(ast AstNode) AstNode {
+func (a Ast) attribute(isAccess bool, ast AstNode) AstNode {
 	g_error.error(fmt.Sprintf("无效运算[%v].[%v]", a, ast))
 	return nil
 }
@@ -204,7 +204,7 @@ func (a Ast) clone() AstNode {
 }
 
 func (a Ast) getName() string {
-	g_error.error(fmt.Sprintf("%v未实现name()方法", a))
+	g_error.error(fmt.Sprintf("%v未实现getName()方法", a))
 	return ""
 }
 

@@ -13,7 +13,6 @@ type Func struct {
 	isBuiltin bool
 	params    *Param
 	body      *LocalCompoundStatement
-	result    []AstNode
 }
 
 type Param struct {
@@ -75,23 +74,36 @@ func (c *Class) visit() (AstNode, error) {
 	return c, nil
 }
 
-func (c *Class) attribute(ast AstNode) AstNode {
+func (c *Class) _attribute(ast AstNode) AstNode {
 	_mem, ok := c.scope.class_attr(ast.getName())
 
 	if !ok {
 		if c.parent != nil {
-			return c.parent.attribute(ast)
+			return c.parent._attribute(ast)
 		} else {
-			g_error.error(fmt.Sprintf("未在类[%v]找到成员变量[%v]", c.name, ast.getName()))
+			return nil
 		}
 	}
 
 	return _mem
 }
 
+func (c *Class) attribute(isAccess bool, ast AstNode) AstNode {
+	var iMem AstNode
+	if !isAccess {
+		if ast.getName()[0] == '_' {
+			g_error.error(fmt.Sprintf("未在类[%v]找到成员变量[%v]", c.name, ast.getName()))
+		}
+	}
+	iMem = c._attribute(ast)
+	if iMem == nil {
+		g_error.error(fmt.Sprintf("未在类[%v]找到成员变量[%v]", c.name, ast.getName()))
+	}
+	return iMem
+}
+
 func (c *Class) init() (AstNode, error) {
 	//初始化父类
-
 	if c.parent != nil && c.parent.name == "Object" {
 		_, err := c.parent.init()
 		if err != nil {
@@ -130,9 +142,7 @@ func (f *Func) evaluation() (AstNode, error) {
 	defer func() {
 		g_statement_stack.pop()
 	}()
-	if f.isBuiltin {
-		return builtin_func(f)
-	}
+
 	_, ok := f.params.visit()
 	if ok != nil {
 		return nil, ok
@@ -209,11 +219,18 @@ func (f *Func) String() string {
 
 func (f *Class) String() string {
 	s := ""
+
 	if g_is_debug {
+
+		ss := ""
+		for i := 0; i < len(f.mems); i++ {
+			ss += fmt.Sprintf("%v, ", f.mems[i])
+		}
+
 		if f.parent != nil {
-			s = fmt.Sprintf("Class %v(%v){%v}", f.name, f.parent, f.init)
+			s = fmt.Sprintf("Class %v(%v){%v}", f.name, f.parent, ss)
 		} else {
-			s = fmt.Sprintf("Class %v(%v){%v}", f.name, nil, f.init)
+			s = fmt.Sprintf("Class %v(%v){%v}", f.name, nil, ss)
 		}
 
 	} else {

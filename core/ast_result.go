@@ -32,16 +32,16 @@ func (r *Result) String() string {
 	return s
 }
 
-func (n *Result) getName() string {
-	vals := ""
-	for i := 0; i < len(n.result); i++ {
-		vals += n.result[i].getName() + ", "
-	}
-	if len(n.result) > 0 {
-		vals = vals[:len(vals)-2]
-	}
-	return vals
-}
+// func (n *Result) getName() string {
+// 	vals := ""
+// 	for i := 0; i < len(n.result); i++ {
+// 		vals += n.result[i].getName() + ", "
+// 	}
+// 	if len(n.result) > 0 {
+// 		vals = vals[:len(vals)-2]
+// 	}
+// 	return vals
+// }
 
 func (n *Result) neg() AstNode {
 	if n.num != 1 {
@@ -202,11 +202,11 @@ func (n *Result) rshift(ast AstNode) AstNode {
 	return n.result[0].rshift(ast)
 }
 
-func (n *Result) attribute(ast AstNode) AstNode {
+func (n *Result) attribute(isAccess bool, ast AstNode) AstNode {
 	if n.num != 1 {
 		g_error.error(fmt.Sprintf("左操作数个数应为1，但为%v", n.num))
 	}
-	return n.result[0].attribute(ast)
+	return n.result[0].attribute(isAccess, ast)
 }
 
 func (n *Result) index(ast AstNode) AstNode {
@@ -245,4 +245,12 @@ func (n *Result) at(idx int64) AstNode {
 		return nil
 	}
 	return n.result[idx]
+}
+
+func (n *Result) getName() string {
+	if n.num != 1 {
+		g_error.error(fmt.Sprintf("操作数个数应为1，但为%v", n.num))
+	}
+
+	return n.result[0].getName()
 }

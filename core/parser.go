@@ -127,7 +127,7 @@ func (p *Parser) list(scope *ScopedSymbolTable) AstNode {
 	return node
 }
 
-func (p *Parser) func_call(scope *ScopedSymbolTable) AstNode {
+func (p *Parser) base_tp(scope *ScopedSymbolTable) AstNode {
 	token := p.currentToken
 	var node AstNode
 
@@ -169,144 +169,245 @@ func (p *Parser) func_call(scope *ScopedSymbolTable) AstNode {
 
 }
 
-func (p *Parser) index(scope *ScopedSymbolTable) AstNode {
+// func (p *Parser) index(scope *ScopedSymbolTable) AstNode {
+// 	token := p.currentToken
+
+// 	node := p.func_call(scope)
+
+// 	if p.currentToken.valueType == LPRNTH {
+
+// 		cnt := 0
+// 		max := 8
+// 		params := make([]AstNode, max)
+// 		func_name := node.getName()
+
+// 		p.eat(LPRNTH,
+// 			fmt.Sprintf("期望是'(',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) //(
+
+// 		for p.currentToken.valueType != RPRNTH {
+// 			if cnt >= max {
+// 				max += 8
+// 				_tmp := make([]AstNode, max)
+// 				copy(_tmp, params)
+// 				params = _tmp
+// 			}
+// 			params[cnt] = p.tuple(scope)
+// 			if params[cnt] == nil {
+// 				g_error.error(fmt.Sprintf("无效参数，位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 			}
+// 			cnt++
+// 			if p.currentToken.valueType != COMMA {
+// 				break
+// 			}
+// 			p.eat(COMMA,
+// 				fmt.Sprintf("期望是',',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 		}
+
+// 		p.eat(RPRNTH,
+// 			fmt.Sprintf("期望是')',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) // )
+// 		if cnt == 0 {
+// 			node = NewFuncCallOperator(token, func_name, nil, scope)
+// 		} else {
+// 			node = NewFuncCallOperator(token, func_name, params[:cnt], scope)
+// 		}
+
+// 	}
+
+// 	return node
+// }
+
+// func (p *Parser) attribute(scope *ScopedSymbolTable) AstNode {
+// 	node := p.index(scope)
+
+// 	for p.currentToken.valueType == LBRK {
+// 		token := p.currentToken
+
+// 		p.eat(token.valueType,
+// 			fmt.Sprintf("期望是'[',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 		left_idx := p.expr(scope)
+// 		if p.currentToken.valueType != COLON {
+// 			node = NewBinOperator(node, token, left_idx, scope)
+// 		} else {
+// 			p.eat(COLON,
+// 				fmt.Sprintf("期望是':',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 			right_idx := p.expr(scope)
+// 			if left_idx == nil {
+// 				left_idx = NewEmpty(&Token{})
+// 			}
+// 			if right_idx == nil {
+// 				right_idx = NewEmpty(&Token{})
+// 			}
+// 			node = NewTrdOperator(token, node, left_idx, right_idx, scope)
+// 		}
+
+// 		p.eat(RBRK,
+// 			fmt.Sprintf("期望是']',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+
+// 	}
+
+// 	return node
+// }
+
+// func (p *Parser) reverse(scope *ScopedSymbolTable) AstNode {
+// 	var node AstNode
+// 	tnode := p.selfaddsub(scope)
+// 	switch p.currentToken.valueType {
+// 	case PLUS_PLUS:
+// 		node = NewSelfAfterOperator(p.currentToken, tnode, scope)
+// 		p.eat(PLUS_PLUS,
+// 			fmt.Sprintf("期望是'++',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 	case MINUS_MINUS:
+// 		node = NewSelfAfterOperator(p.currentToken, tnode, scope)
+// 		p.eat(MINUS_MINUS,
+// 			fmt.Sprintf("期望是'--',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 	default:
+// 		node = tnode
+// 	}
+
+// 	return node
+// }
+
+// func (p *Parser) factor(scope *ScopedSymbolTable) AstNode {
+// 	token := p.currentToken
+// 	if token.valueType == REVERSE {
+// 		p.eat(REVERSE,
+// 			fmt.Sprintf("期望是'~',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 		return NewUnaryOperator(token, p.reverse(scope), scope)
+// 	}
+
+// 	return p.reverse(scope)
+// }
+
+// func (p *Parser) selfaddsub(scope *ScopedSymbolTable) AstNode {
+// 	node := p.attribute(scope)
+
+// 	for p.currentToken.valueType == QUOTE {
+// 		token := p.currentToken
+// 		p.eat(token.valueType,
+// 			fmt.Sprintf("期望是'.',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 		node = NewBinOperator(node, token, p.attribute(scope), scope)
+
+// 	}
+
+// 	return node
+// }
+
+// func (p *Parser) negpos(scope *ScopedSymbolTable) AstNode {
+// 	token := p.currentToken
+
+// 	if token.valueType == MINUS || token.valueType == PLUS {
+// 		p.eat(token.valueType,
+// 			fmt.Sprintf("期望是'-'或'+',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+// 		return NewUnaryOperator(token, p.factor(scope), scope)
+// 	}
+
+// 	return p.factor(scope)
+// }
+
+func (p *Parser) back_op(scope *ScopedSymbolTable) AstNode {
 	token := p.currentToken
+	node := p.base_tp(scope)
+	for p.currentToken.valueType != EOF {
+		if p.currentToken.valueType == QUOTE {
+			token := p.currentToken
+			p.eat(token.valueType,
+				fmt.Sprintf("期望是'.',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			node = NewBinOperator(node, token, p.base_tp(scope), scope)
+		} else if p.currentToken.valueType == PLUS_PLUS {
+			node = NewSelfAfterOperator(p.currentToken, node, scope)
+			p.eat(PLUS_PLUS,
+				fmt.Sprintf("期望是'++',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		} else if p.currentToken.valueType == MINUS_MINUS {
+			node = NewSelfAfterOperator(p.currentToken, node, scope)
+			p.eat(MINUS_MINUS,
+				fmt.Sprintf("期望是'--',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		} else if p.currentToken.valueType == LBRK {
+			token := p.currentToken
 
-	node := p.func_call(scope)
-
-	if p.currentToken.valueType == LPRNTH {
-
-		cnt := 0
-		max := 8
-		params := make([]AstNode, max)
-		func_name := node.getName()
-
-		p.eat(LPRNTH,
-			fmt.Sprintf("期望是'(',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) //(
-
-		for p.currentToken.valueType != RPRNTH {
-			if cnt >= max {
-				max += 8
-				_tmp := make([]AstNode, max)
-				copy(_tmp, params)
-				params = _tmp
+			p.eat(token.valueType,
+				fmt.Sprintf("期望是'[',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			left_idx := p.expr(scope)
+			if p.currentToken.valueType != COLON {
+				node = NewBinOperator(node, token, left_idx, scope)
+			} else {
+				p.eat(COLON,
+					fmt.Sprintf("期望是':',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+				right_idx := p.expr(scope)
+				if left_idx == nil {
+					left_idx = NewEmpty(&Token{})
+				}
+				if right_idx == nil {
+					right_idx = NewEmpty(&Token{})
+				}
+				node = NewTrdOperator(token, node, left_idx, right_idx, scope)
 			}
-			params[cnt] = p.tuple(scope)
-			if params[cnt] == nil {
-				g_error.error(fmt.Sprintf("无效参数，位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			}
-			cnt++
-			if p.currentToken.valueType != COMMA {
-				break
-			}
-			p.eat(COMMA,
-				fmt.Sprintf("期望是',',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		}
 
-		p.eat(RPRNTH,
-			fmt.Sprintf("期望是')',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) // )
-		if cnt == 0 {
-			node = NewFuncCallOperator(token, func_name, nil, scope)
+			p.eat(RBRK,
+				fmt.Sprintf("期望是']',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+
+		} else if p.currentToken.valueType == LPRNTH {
+			func_name := node
+
+			p.eat(LPRNTH,
+				fmt.Sprintf("期望是'(',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) //(
+			cnt := 0
+			max := 8
+			params := make([]AstNode, max)
+			for p.currentToken.valueType != RPRNTH {
+				if cnt >= max {
+					max += 8
+					_tmp := make([]AstNode, max)
+					copy(_tmp, params)
+					params = _tmp
+				}
+				params[cnt] = p.tuple(scope)
+				if params[cnt] == nil {
+					g_error.error(fmt.Sprintf("无效参数，位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+				}
+				cnt++
+				if p.currentToken.valueType != COMMA {
+					break
+				}
+				p.eat(COMMA,
+					fmt.Sprintf("期望是',',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			}
+
+			p.eat(RPRNTH,
+				fmt.Sprintf("期望是')',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) // )
+			if cnt == 0 {
+				node = NewFuncCallOperator(token, func_name, nil, scope)
+			} else {
+				node = NewFuncCallOperator(token, func_name, params[:cnt], scope)
+			}
 		} else {
-			node = NewFuncCallOperator(token, func_name, params[:cnt], scope)
+			break
 		}
-
 	}
 
 	return node
 }
 
-func (p *Parser) attribute(scope *ScopedSymbolTable) AstNode {
-	node := p.index(scope)
+func (p *Parser) front_op(scope *ScopedSymbolTable) AstNode {
+	token := p.currentToken
 
-	for p.currentToken.valueType == LBRK {
-		token := p.currentToken
-
-		p.eat(token.valueType,
-			fmt.Sprintf("期望是'[',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		left_idx := p.expr(scope)
-		if p.currentToken.valueType != COLON {
-			node = NewBinOperator(node, token, left_idx, scope)
+	for p.currentToken.valueType != EOF {
+		if token.valueType == MINUS || token.valueType == PLUS {
+			p.eat(token.valueType,
+				fmt.Sprintf("期望是'-'或'+',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			return NewUnaryOperator(token, p.back_op(scope), scope)
+		} else if token.valueType == REVERSE {
+			p.eat(REVERSE,
+				fmt.Sprintf("期望是'~',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			return NewUnaryOperator(token, p.back_op(scope), scope)
 		} else {
-			p.eat(COLON,
-				fmt.Sprintf("期望是':',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			right_idx := p.expr(scope)
-			if left_idx == nil {
-				left_idx = NewEmpty(&Token{})
-			}
-			if right_idx == nil {
-				right_idx = NewEmpty(&Token{})
-			}
-			node = NewTrdOperator(token, node, left_idx, right_idx, scope)
+			break
 		}
-
-		p.eat(RBRK,
-			fmt.Sprintf("期望是']',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-
 	}
-
-	return node
-}
-
-func (p *Parser) reverse(scope *ScopedSymbolTable) AstNode {
-	var node AstNode
-	tnode := p.selfaddsub(scope)
-	switch p.currentToken.valueType {
-	case PLUS_PLUS:
-		node = NewSelfAfterOperator(p.currentToken, tnode, scope)
-		p.eat(PLUS_PLUS,
-			fmt.Sprintf("期望是'++',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-	case MINUS_MINUS:
-		node = NewSelfAfterOperator(p.currentToken, tnode, scope)
-		p.eat(MINUS_MINUS,
-			fmt.Sprintf("期望是'--',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-	default:
-		node = tnode
-	}
-
-	return node
-}
-
-func (p *Parser) factor(scope *ScopedSymbolTable) AstNode {
-	token := p.currentToken
-	if token.valueType == REVERSE {
-		p.eat(REVERSE,
-			fmt.Sprintf("期望是'~',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		return NewUnaryOperator(token, p.reverse(scope), scope)
-	}
-
-	return p.reverse(scope)
-}
-
-func (p *Parser) selfaddsub(scope *ScopedSymbolTable) AstNode {
-	node := p.attribute(scope)
-
-	for p.currentToken.valueType == QUOTE {
-		token := p.currentToken
-		p.eat(token.valueType,
-			fmt.Sprintf("期望是'.',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		node = NewBinOperator(node, token, p.attribute(scope), scope)
-
-	}
-
-	return node
-}
-
-//=========================================================
-func (p *Parser) negpos(scope *ScopedSymbolTable) AstNode {
-	token := p.currentToken
-
-	if token.valueType == MINUS || token.valueType == PLUS {
-		p.eat(token.valueType,
-			fmt.Sprintf("期望是'-'或'+',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		return NewUnaryOperator(token, p.factor(scope), scope)
-	}
-
-	return p.factor(scope)
+	return p.back_op(scope)
 }
 
 func (p *Parser) term(scope *ScopedSymbolTable) AstNode {
-	node := p.negpos(scope)
+	node := p.front_op(scope)
 
 TERM_LOOP:
 	for {
@@ -314,8 +415,8 @@ TERM_LOOP:
 		case MULTI, DIV, MOD:
 			token := p.currentToken
 			p.eat(token.valueType,
-				fmt.Sprintf("期望是'*'或'/',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			node = NewBinOperator(node, token, p.negpos(scope), scope)
+				fmt.Sprintf("期望是'*'或'/'或'%',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			node = NewBinOperator(node, token, p.front_op(scope), scope)
 		default:
 			break TERM_LOOP
 		}
@@ -802,6 +903,7 @@ func (p *Parser) class_def(scope *ScopedSymbolTable) *Class {
 	inScope := NewScopedSymbolTable(scope.scopeName+"_class", scope.scopeLevel+1, scope)
 	token := p.currentToken
 	cname := p.variable(inScope)
+
 	var parent *Class
 	if p.currentToken.valueType == INHERIT {
 		p.eat(INHERIT,
@@ -840,7 +942,7 @@ func (p *Parser) class_def(scope *ScopedSymbolTable) *Class {
 		if p.currentToken.valueType == KEY_FUNC {
 			p.eat(KEY_FUNC,
 				fmt.Sprintf("期望是'func',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			tmp := p.class_func_def(inScope)
+			tmp := p.func_def(inScope)
 			if tmp.name == cname.name {
 				isFound = true
 			}
@@ -990,7 +1092,9 @@ func (p *Parser) global_compound_statement(scope *ScopedSymbolTable) *GlobalComp
 }
 
 func (p *Parser) program(scope *ScopedSymbolTable) AstNode {
-	return p.global_compound_statement(scope)
+	myRet := p.global_compound_statement(scope)
+
+	return myRet
 }
 
 func (p *Parser) parser() {

@@ -42,7 +42,7 @@ type Variable struct {
 type FuncCallOperator struct {
 	Ast
 	token  *Token
-	name   string
+	name   AstNode
 	params []AstNode
 	scope  *ScopedSymbolTable
 }
@@ -57,8 +57,8 @@ func NewEmpty(token *Token) *Empty {
 	return &Empty{token: token}
 }
 
-func NewFuncCallOperator(token *Token, name string, params []AstNode, scope *ScopedSymbolTable) *FuncCallOperator {
-	return &FuncCallOperator{name: name, params: params, scope: scope, token: token}
+func NewFuncCallOperator(token *Token, func_name AstNode, params []AstNode, scope *ScopedSymbolTable) *FuncCallOperator {
+	return &FuncCallOperator{name: func_name, params: params, scope: scope, token: token}
 }
 
 func NewBinOperator(left AstNode, oper *Token, right AstNode, scope *ScopedSymbolTable) *BinOperator {
@@ -92,21 +92,22 @@ func NewVariable(token *Token, scope *ScopedSymbolTable) *Variable {
 }
 
 func (f *FuncCallOperator) getName() string {
-	return f.name
+	fun_name, err := f.name.visit()
+	if err != nil {
+		g_error.error(fmt.Sprintf("函数[%v]引用错误", f.name))
+	}
+	return fun_name.getName()
 }
 
-func (f *FuncCallOperator) visit() (AstNode, error) {
-	var ok bool
-	var _fn interface{}
-	if _fn, ok = f.scope.lookup(f.name); !ok {
-		if _fn, ok = g_builtin.builtin(f.name); !ok {
-			return nil, fmt.Errorf("函数[%v]未定义", f.name)
-		}
-	}
-	switch fn := _fn.(type) {
+func (f *FuncCallOperator) exec(fname AstNode, isExec *bool) (AstNode, error) {
+	switch fn := fname.(type) {
 	case *Func:
 		fn.params.set(f.params) //给参数赋值
-		return fn.evaluation()
+		if fn.isBuiltin {
+			return builtin_func(fn)
+		} else {
+			return fn.evaluation()
+		}
 	case *Class:
 		ifunc, err := fn.constructor()
 		if err != nil {
@@ -115,10 +116,42 @@ func (f *FuncCallOperator) visit() (AstNode, error) {
 		ifunc.params.set(f.params)
 		return fn.init()
 	default:
-		return nil, fmt.Errorf("变量[%v]非函数定义", f.name)
+		*isExec = false
+	}
+	return nil, nil
+}
+
+func (f *FuncCallOperator) visit() (AstNode, error) {
+	var ok bool
+	var fn AstNode
+	_fn, err := f.name.visit()
+	if err != nil {
+		return nil, err
+	}
+	isExec := true
+	if ret, err := f.exec(_fn, &isExec); err != nil {
+		return ret, err
+	} else {
+		if isExec {
+			return ret, err
+		}
 	}
 
-	return nil, nil
+	isFound := false
+	if fn, ok = f.scope.lookup(_fn.getName()); !ok {
+		if fn, ok = g_builtin.builtin(_fn.getName()); !ok {
+			return nil, fmt.Errorf("函数[%v]未定义", f.name)
+		} else {
+			isFound = true
+		}
+	} else {
+		isFound = true
+	}
+
+	if !isFound {
+		return nil, fmt.Errorf("函数[%v]定义", f.name)
+	}
+	return f.exec(fn, &isExec)
 }
 
 func (v *Variable) getName() string {
@@ -126,13 +159,23 @@ func (v *Variable) getName() string {
 }
 
 func (n *Variable) visit() (AstNode, error) {
-
-	sv, sok := n.scope.lookup(n.name)
-	if !sok {
-		return nil, fmt.Errorf("%v未赋值或初始化", n.name)
+	var sv AstNode
+	var ok bool
+	if sv, ok = n.scope.lookup(n.name); !ok {
+		if sv, ok = g_builtin.builtin(n.name); !ok {
+			return nil, fmt.Errorf("%v未赋值或初始化", n.name)
+		}
 	}
 
 	return sv, nil
+}
+
+func (b *BinOperator) getName() string {
+	return b.right.getName()
+}
+
+func (b *BinOperator) reference() (AstNode, error) {
+	return nil, nil
 }
 
 func (b *BinOperator) visit() (AstNode, error) {
@@ -179,12 +222,19 @@ func (b *BinOperator) visit() (AstNode, error) {
 	case RSHIFT:
 		return lv.rshift(b.right), nil
 	case QUOTE:
-		return lv.attribute(b.right), nil
+		if b.left.getName() == "this" {
+			return lv.attribute(true, b.right), nil
+		}
+		return lv.attribute(false, b.right), nil
 	case LBRK:
 		return lv.index(b.right), nil
 	}
 
 	return nil, fmt.Errorf("不支持此操作:%v", b.operator.valueType)
+}
+
+func (s *SelfAfterOperator) getName() string {
+	return s.node.getName()
 }
 
 func (s *SelfAfterOperator) visit() (AstNode, error) {
@@ -198,6 +248,10 @@ func (s *SelfAfterOperator) visit() (AstNode, error) {
 		return iVal.minusminus(), nil
 	}
 	return nil, fmt.Errorf("值[%v]不支持'%v'操作", iVal, s.operator.valueType)
+}
+
+func (u *UnaryOperator) getName() string {
+	return u.node.getName()
 }
 
 func (u *UnaryOperator) visit() (AstNode, error) {
@@ -217,6 +271,10 @@ func (u *UnaryOperator) visit() (AstNode, error) {
 	}
 
 	return v, nil
+}
+
+func (t *TrdOperator) getName() string {
+	return t.node.getName()
 }
 
 func (t *TrdOperator) visit() (AstNode, error) {

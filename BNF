@@ -36,9 +36,8 @@
 // variable   :ID
 // empty      :
 
-
-
-
+                        表达式                expr
+,                       元组                  tuple
 ||                      布尔“或”               or
 &&                      布尔“与”               and
 <，<=，>，>=，!=，==     比较                   compare
@@ -48,14 +47,17 @@
 &                       按位与                 bitand
 <<，>>                  移位                   shift
 +，-                    加法与减法              term
-*，/，%                 乘法、除法与取余         negpos
-+x，-x                  正负号                 factor
-x--,x++                 自增，自减             reverse
-~x                      按位翻转               selfaddsub
-x.attribute             属性参考               attribute
-x[index]                下标                   index
-x[index:index]          寻址段                 index
-f(arguments...)         函数调用               func_call
+*，/，%                 乘法、除法与取余         front_op
+-------------------------前置运算符-------------------------
++x，-x                  正负号                 back_op
+~x                      按位翻转               back_op
+=========================前置运算符=========================
+x--,x++                 自增，自减             base_tp
+x.attribute             属性参考               base_tp
+x[index]                下标                   base_tp
+x[index:index]          寻址段                 base_tp
+f(arguments...)         函数调用               base_tp
+
 [expression,...]        列表显示               list
 {key:datum,...}         字典显示               dict
 (variable)              绑定                   bind

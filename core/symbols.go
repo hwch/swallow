@@ -94,7 +94,6 @@ func (s *StatementStack) String() string {
 }
 
 func (s *ScopedSymbolTable) set(val string, attr AstNode) {
-
 	s.vals[val] = attr
 }
 

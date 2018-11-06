@@ -144,51 +144,60 @@ func (a *ContinueStatement) Type() AstType       { return AST_CONTINUE }
 func (a *ForStatement) Type() AstType            { return AST_FOR }
 
 func (a *AssignStatement) variable_visit(l *Variable, r AstNode) (AstNode, error) {
-	if l.name == "_" {
-		return nil, nil
-	}
-	var ival AstNode
-	/* 等号右边求值 */
-	v, err := r.visit()
-	if err != nil {
-		return nil, err
-	}
-	if a.operator.valueType == ASSIGN {
-		ival = v //赋值
-	} else {
-		/* 等号左边求值 */
-		ll, err := l.visit()
+	if l.name != "_" {
+		var ival AstNode
+		/* 等号右边求值 */
+		v, err := r.visit()
 		if err != nil {
 			return nil, err
 		}
+		if a.operator.valueType == ASSIGN {
+			ival = v //赋值
+		} else {
+			/* 等号左边求值 */
+			ll, err := l.visit()
+			if err != nil {
+				return nil, err
+			}
 
-		switch a.operator.valueType { //赋值
-		case PLUS_EQ:
-			ival = ll.add(v)
-		case MINUS_EQ:
-			ival = ll.minus(v)
-		case MULTI_EQ:
-			ival = ll.multi(v)
-		case DIV_EQ:
-			ival = ll.div(v)
-		case MOD_EQ:
-			ival = ll.mod(v)
+			switch a.operator.valueType { //赋值
+			case PLUS_EQ:
+				ival = ll.add(v)
+			case MINUS_EQ:
+				ival = ll.minus(v)
+			case MULTI_EQ:
+				ival = ll.multi(v)
+			case DIV_EQ:
+				ival = ll.div(v)
+			case MOD_EQ:
+				ival = ll.mod(v)
+			}
+
 		}
+		/* 基础类型传值，复杂类型传引用 */
 
+		switch ival.(type) {
+		case *Integer:
+			ival = ival.clone()
+		case *Boolean:
+			ival = ival.clone()
+		case *String:
+			ival = ival.clone()
+		case *Double:
+			ival = ival.clone()
+		}
+		// switch ival.Type() {
+		// case AST_INT:
+		// 	fallthrough
+		// case AST_BOOL:
+		// 	fallthrough
+		// case AST_STRING:
+		// 	fallthrough
+		// case AST_DOUBLE:
+		// 	ival = ival.clone()
+		// }
+		a.scope.set(l.name, ival)
 	}
-	/* 基础类型传值，复杂类型传引用 */
-
-	switch ival.Type() {
-	case AST_INT:
-		fallthrough
-	case AST_BOOL:
-		fallthrough
-	case AST_STRING:
-		fallthrough
-	case AST_DOUBLE:
-		ival = ival.clone()
-	}
-	a.scope.set(l.name, ival)
 
 	return nil, nil
 }
@@ -274,15 +283,13 @@ func (a *AssignStatement) visit() (AstNode, error) {
 	var myVar *Variable
 	var right AstNode
 
-	switch a.left.Type() {
-	case AST_VAR: // 赋值第2类情况
-		myVar = a.left.(*Variable)
+	switch l := a.left.(type) {
+	case *Variable: // 赋值第2类情况
+		myVar = l
 		right = a.right
-	case AST_TUPLE: // 赋值第1,3类情况
-		l := a.left.(*Tuple)
+	case *Tuple: // 赋值第1,3类情况
 		return a.tuple_visit(l)
-	case AST_BIN_OP: // 赋值第2类情况
-		l := a.left.(*BinOperator)
+	case *BinOperator: // 赋值第2类情况
 		if l.operator.valueType == QUOTE { // 成员引用
 			_cls, err := l.left.visit()
 			if err != nil {
@@ -292,6 +299,12 @@ func (a *AssignStatement) visit() (AstNode, error) {
 			if !ok {
 				return nil, fmt.Errorf("无效运算%v.%v,位置[%v:%v:%v]",
 					l.left, l.right, l.operator.file, l.operator.line, l.operator.pos)
+			} else {
+				cls_name := l.left.getName()
+				mem_name := l.right.getName()
+				if mem_name[0] == '_' && cls_name != "this" {
+					return nil, fmt.Errorf("未在类[%v]找到成员变量[%v]", cls.name, mem_name)
+				}
 			}
 			if rv, err := a.right.visit(); err != nil {
 				return nil, err

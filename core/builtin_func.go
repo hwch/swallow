@@ -47,6 +47,8 @@ func builtin_func(f *Func) (AstNode, error) {
 			buf[pos] = &Integer{token: nil, value: iStart + pos}
 		}
 		return NewResult(nil, []AstNode{NewTuple(nil, buf)}), nil
+	case "del":
+
 	case "exit":
 		os.Exit(0)
 	}
