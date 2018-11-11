@@ -12,9 +12,9 @@ import (
 	// "sync"
 )
 
-var g_is_exit bool
+var gIsExit bool
 
-func linux_read(str *string) error {
+func linuxRead(str *string) error {
 	var ret []rune
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -38,11 +38,11 @@ func linux_read(str *string) error {
 	return nil
 }
 
-func macos_read(str *string) error {
+func macosRead(str *string) error {
 	return fmt.Errorf("未实现...")
 }
 
-func windows_read(str *string) error {
+func windowsRead(str *string) error {
 	var ret []rune
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -69,14 +69,15 @@ func windows_read(str *string) error {
 func scanf(str *string) (err error) {
 
 	if runtime.GOOS == "windows" {
-		err = windows_read(str)
+		err = windowsRead(str)
 	} else if runtime.GOOS == "linux" {
-		err = linux_read(str)
+		err = linuxRead(str)
 	} else if runtime.GOOS == "darwin" {
-		err = macos_read(str)
-	} else {
-		log.Fatal("Unsupport platform '%v'", runtime.GOOS)
+		err = macosRead(str)
 	}
+
+	log.Fatalf("Unsupport platform '%v'", runtime.GOOS)
+
 	return
 }
 
@@ -84,7 +85,7 @@ func ReadStdin() {
 
 	buf := ""
 
-	for !g_is_exit {
+	for !gIsExit {
 		print("==> ")
 		err := scanf(&buf)
 		if err != nil {
@@ -92,7 +93,7 @@ func ReadStdin() {
 				fmt.Printf("Read stdin failed: %v\n", err)
 			} else {
 				println()
-				g_is_exit = true
+				gIsExit = true
 			}
 			return
 		}
@@ -104,8 +105,8 @@ func ReadStdin() {
 			continue
 		}
 		NewSwallow(buf, "<stdin>").interpreter()
-		if g_is_debug {
-			fmt.Printf("符号表[%v]\n", g_symbols)
+		if gIsDebug {
+			fmt.Printf("符号表[%v]\n", gSymbols)
 		}
 	}
 
@@ -128,7 +129,7 @@ func ReadFile(fstr string) {
 	f.Close()
 
 	NewSwallow(string(_data), fstr).interpreter()
-	if g_is_debug {
-		fmt.Printf("符号表[%v]\n", g_symbols)
+	if gIsDebug {
+		fmt.Printf("符号表[%v]\n", gSymbols)
 	}
 }

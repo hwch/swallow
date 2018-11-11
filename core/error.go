@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	g_error_cnt int
-	g_error     *Error
+	gErrorCnt int
+	gError    *Error
 )
 
 type Error struct {
@@ -22,7 +22,7 @@ func NewError() *Error {
 func (this *Error) error(s string) {
 	this.err.PushBack(s)
 
-	if this.err.Len() >= g_error_cnt {
+	if this.err.Len() >= gErrorCnt {
 		ss := ""
 		for v := this.err.Front(); v != nil; v = v.Next() {
 			ss += fmt.Sprintf("%v\n", v.Value)

@@ -5,7 +5,7 @@ type Package struct {
 	isImport bool
 }
 
-var g_import_list map[string]*Package
+var gImportList map[string]*Package
 
 func doImport(s string) string {
 	return ""

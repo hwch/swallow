@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func builtin_func(f *Func, scope *ScopedSymbolTable) (AstNode, error) {
+func builtinFunc(f *Func, scope *ScopedSymbolTable) (AstNode, error) {
 	switch f.name {
 	case "print":
 		vals := make([]interface{}, len(f.params.value))
@@ -25,21 +25,21 @@ func builtin_func(f *Func, scope *ScopedSymbolTable) (AstNode, error) {
 			if v, ok := f.params.value[0].(*Integer); ok {
 				iStop = v.value
 			} else {
-				g_error.error(fmt.Sprintf("无效数值%v", f.params.value[0]))
+				gError.error(fmt.Sprintf("无效数值%v", f.params.value[0]))
 			}
 		case 2:
 			if v, ok := f.params.value[0].(*Integer); ok {
 				iStart = v.value
 			} else {
-				g_error.error(fmt.Sprintf("无效数值%v", f.params.value[0]))
+				gError.error(fmt.Sprintf("无效数值%v", f.params.value[0]))
 			}
 			if v, ok := f.params.value[1].(*Integer); ok {
 				iStop = v.value
 			} else {
-				g_error.error(fmt.Sprintf("无效数值%v", f.params.value[1]))
+				gError.error(fmt.Sprintf("无效数值%v", f.params.value[1]))
 			}
 		default:
-			g_error.error(fmt.Sprintf("参数个数[%v]超范围", len(f.params.value)))
+			gError.error(fmt.Sprintf("参数个数[%v]超范围", len(f.params.value)))
 		}
 		buf := make([]AstNode, iStop-iStart)
 		var pos int64

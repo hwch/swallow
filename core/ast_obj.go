@@ -75,7 +75,7 @@ func (c *ClassObj) init(scope *ScopedSymbolTable) (*ClassObj, error) {
 }
 
 func (c *ClassObj) constructor() (*Func, error) {
-	v, _ := c.symtab.class_attr(c.cls.name.name)
+	v, _ := c.symtab.classAttr(c.cls.name.name)
 	vv, iok := v.(*Func)
 
 	if !iok {
@@ -99,14 +99,14 @@ func (c *ClassObj) getName() string {
 }
 
 func (c *ClassObj) _attribute(ast AstNode, scope *ScopedSymbolTable) AstNode {
-	_mem, ok := c.symtab.class_attr(ast.getName())
+	_mem, ok := c.symtab.classAttr(ast.getName())
 
 	if !ok {
 		if c.parent != nil {
 			return c.parent._attribute(ast, scope)
-		} else {
-			return nil
 		}
+		return nil
+
 	}
 
 	return _mem
@@ -116,7 +116,7 @@ func (c *ClassObj) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymb
 	var iMem AstNode
 	iMem = c._attribute(ast, scope)
 	if iMem == nil {
-		g_error.error(fmt.Sprintf("未在对象[%v]找到成员变量[%v]", c.cls.name, ast.getName()))
+		gError.error(fmt.Sprintf("未在对象[%v]找到成员变量[%v]", c.cls.name, ast.getName()))
 	}
 
 	return c.symtab, iMem
@@ -125,7 +125,7 @@ func (c *ClassObj) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymb
 func (c *ClassObj) String() string {
 	s := ""
 
-	if g_is_debug {
+	if gIsDebug {
 
 		if c.parent != nil {
 			s = fmt.Sprintf("ClassObj %v(%v){}", c.cls.name, c.parent)

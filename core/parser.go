@@ -25,7 +25,7 @@ func (p *Parser) eat(tp TokenType, err string) {
 	if p.currentToken.valueType == tp {
 		p.currentToken = p.lexer.getNextToken()
 	} else {
-		g_error.error(err)
+		gError.error(err)
 	}
 }
 
@@ -67,7 +67,7 @@ func (p *Parser) dict() AstNode {
 			fmt.Sprintf("期望是'(',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		node = p.expr()
 		if node == nil { //TODO: 是否报错待定
-			g_error.error(fmt.Sprintf("不能为空,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			gError.error(fmt.Sprintf("不能为空,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		}
 
 		p.eat(RPRNTH,
@@ -94,7 +94,7 @@ func (p *Parser) list() AstNode {
 
 			xp := p.tuple()
 			if xp == nil {
-				g_error.error(fmt.Sprintf("无效字典key值,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+				gError.error(fmt.Sprintf("无效字典key值,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 			}
 
 			p.eat(COLON,
@@ -121,7 +121,7 @@ func (p *Parser) list() AstNode {
 	return node
 }
 
-func (p *Parser) base_tp() AstNode {
+func (p *Parser) baseTp() AstNode {
 	token := p.currentToken
 	var node AstNode
 
@@ -162,15 +162,15 @@ func (p *Parser) base_tp() AstNode {
 
 }
 
-func (p *Parser) back_op() AstNode {
+func (p *Parser) backOp() AstNode {
 	token := p.currentToken
-	node := p.base_tp()
+	node := p.baseTp()
 	for p.currentToken.valueType != EOF {
 		if p.currentToken.valueType == QUOTE {
 			token := p.currentToken
 			p.eat(token.valueType,
 				fmt.Sprintf("期望是'.',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			node = NewAttributeOperator(token, node, p.base_tp())
+			node = NewAttributeOperator(token, node, p.baseTp())
 		} else if p.currentToken.valueType == PLUS_PLUS {
 			node = NewSelfAfterOperator(p.currentToken, node)
 			p.eat(PLUS_PLUS,
@@ -184,27 +184,27 @@ func (p *Parser) back_op() AstNode {
 
 			p.eat(token.valueType,
 				fmt.Sprintf("期望是'[',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			left_idx := p.expr()
+			leftIdx := p.expr()
 			if p.currentToken.valueType != COLON {
-				node = NewAccessOperator(token, node, left_idx)
+				node = NewAccessOperator(token, node, leftIdx)
 			} else {
 				p.eat(COLON,
 					fmt.Sprintf("期望是':',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-				right_idx := p.expr()
-				if left_idx == nil {
-					left_idx = NewEmpty(&Token{})
+				rightIdx := p.expr()
+				if leftIdx == nil {
+					leftIdx = NewEmpty(&Token{})
 				}
-				if right_idx == nil {
-					right_idx = NewEmpty(&Token{})
+				if rightIdx == nil {
+					rightIdx = NewEmpty(&Token{})
 				}
-				node = NewSliceOperator(token, node, left_idx, right_idx)
+				node = NewSliceOperator(token, node, leftIdx, rightIdx)
 			}
 
 			p.eat(RBRK,
 				fmt.Sprintf("期望是']',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 
 		} else if p.currentToken.valueType == LPRNTH {
-			func_name := node
+			funcName := node
 
 			p.eat(LPRNTH,
 				fmt.Sprintf("期望是'(',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) //(
@@ -220,7 +220,7 @@ func (p *Parser) back_op() AstNode {
 				}
 				params[cnt] = p.tuple()
 				if params[cnt] == nil {
-					g_error.error(fmt.Sprintf("无效参数，位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+					gError.error(fmt.Sprintf("无效参数，位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 				}
 				cnt++
 				if p.currentToken.valueType != COMMA {
@@ -233,39 +233,38 @@ func (p *Parser) back_op() AstNode {
 			p.eat(RPRNTH,
 				fmt.Sprintf("期望是')',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) // )
 			if cnt == 0 {
-				node = NewFuncCallOperator(token, func_name, nil)
+				node = NewFuncCallOperator(token, funcName, nil)
 			} else {
-				node = NewFuncCallOperator(token, func_name, params[:cnt])
+				node = NewFuncCallOperator(token, funcName, params[:cnt])
 			}
 		} else {
 			break
 		}
 	}
-
 	return node
 }
 
-func (p *Parser) front_op() AstNode {
+func (p *Parser) frontOp() AstNode {
 	token := p.currentToken
 
 	for p.currentToken.valueType != EOF {
 		if token.valueType == MINUS || token.valueType == PLUS {
 			p.eat(token.valueType,
 				fmt.Sprintf("期望是'-'或'+',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			return NewUnaryOperator(token, p.back_op())
+			return NewUnaryOperator(token, p.backOp())
 		} else if token.valueType == REVERSE {
 			p.eat(REVERSE,
 				fmt.Sprintf("期望是'~',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			return NewUnaryOperator(token, p.back_op())
+			return NewUnaryOperator(token, p.backOp())
 		} else {
 			break
 		}
 	}
-	return p.back_op()
+	return p.backOp()
 }
 
 func (p *Parser) term() AstNode {
-	node := p.front_op()
+	node := p.frontOp()
 
 TERM_LOOP:
 	for {
@@ -273,8 +272,8 @@ TERM_LOOP:
 		case MULTI, DIV, MOD:
 			token := p.currentToken
 			p.eat(token.valueType,
-				fmt.Sprintf("期望是'*'或'/'或'%',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			node = NewBinOperator(node, token, p.front_op())
+				fmt.Sprintf("期望是'%v',位置[%v:%v:%v]", p.currentToken.valueType, p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			node = NewBinOperator(node, token, p.frontOp())
 		default:
 			break TERM_LOOP
 		}
@@ -339,9 +338,8 @@ func (p *Parser) bitor() AstNode {
 	for p.currentToken.valueType == XOR {
 		token := p.currentToken
 		p.eat(p.currentToken.valueType,
-			fmt.Sprintf("期望是'|',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+			fmt.Sprintf("期望是'^',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		node = NewBinOperator(node, token, p.xor())
-
 	}
 
 	return node
@@ -446,7 +444,7 @@ func (p *Parser) expr() AstNode {
 }
 
 // 空操作
-func (p *Parser) no_operator() *Empty {
+func (p *Parser) noOperator() *Empty {
 	return &Empty{}
 }
 
@@ -454,14 +452,14 @@ func (p *Parser) assign(left AstNode) AstNode {
 
 	token := p.currentToken
 	p.eat(token.valueType,
-		fmt.Sprintf("期望是'='或'+='或'-='或'*='或'/='或'%=',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		fmt.Sprintf("期望是'='或'+='或'-='或'*='或'/='或'%%=',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 
 	right := p.expr()
 
 	return NewAssignStatement(left, token, right)
 }
 
-func (p *Parser) for_statement() *ForStatement {
+func (p *Parser) forStatement() *ForStatement {
 	/*-----------------------循环条件-----------------------------*/
 	token := p.currentToken
 	var cond [3]AstNode
@@ -513,7 +511,7 @@ func (p *Parser) for_statement() *ForStatement {
 	/*-----------------------循环体-----------------------------*/
 	p.eat(LBRCS,
 		fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-	body := p.statement_local()
+	body := p.statementLocal()
 	p.eat(RBRCS,
 		fmt.Sprintf("期望是'}',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 	/*-----------------------循环体-----------------------------*/
@@ -521,7 +519,7 @@ func (p *Parser) for_statement() *ForStatement {
 	return NewForStatement(token, cond, body)
 }
 
-func (p *Parser) if_statement() *IfStatement {
+func (p *Parser) ifStatement() *IfStatement {
 
 	/*-----------------------if-----------------------------*/
 	token := p.currentToken
@@ -542,11 +540,11 @@ func (p *Parser) if_statement() *IfStatement {
 
 	boolean := p.expr()
 	if boolean == nil {
-		g_error.error(fmt.Sprintf("无效表达式，位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		gError.error(fmt.Sprintf("无效表达式，位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 	}
 	p.eat(LBRCS,
 		fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-	block := p.statement_local()
+	block := p.statementLocal()
 	p.eat(RBRCS,
 		fmt.Sprintf("期望是'}',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 	/*-----------------------if-----------------------------*/
@@ -563,7 +561,7 @@ func (p *Parser) if_statement() *IfStatement {
 		}
 		p.eat(p.currentToken.valueType,
 			fmt.Sprintf("期望是'elif',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		elifNodes[cnt] = p.if_statement()
+		elifNodes[cnt] = p.ifStatement()
 	}
 	/*=======================elif===========================*/
 	/* **********************else************************** */
@@ -574,7 +572,7 @@ func (p *Parser) if_statement() *IfStatement {
 		bl := NewBoolean(&Token{value: "True", valueType: BOOLEAN})
 		p.eat(LBRCS,
 			fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		block := p.statement_local()
+		block := p.statementLocal()
 		p.eat(RBRCS,
 			fmt.Sprintf("期望是'}',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		elifNodes[cnt] = NewIfStatement(token, nil, bl, block, nil)
@@ -587,7 +585,7 @@ func (p *Parser) if_statement() *IfStatement {
 	return NewIfStatement(token, init, boolean, block, elifNodes[:cnt])
 }
 
-func (p *Parser) foreach_statement() *ForeachStatement {
+func (p *Parser) foreachStatement() *ForeachStatement {
 	token := p.currentToken
 	/*-----------------------变量-----------------------------*/
 	a := p.variable()
@@ -607,7 +605,7 @@ func (p *Parser) foreach_statement() *ForeachStatement {
 		fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 
 	/*-----------------------循环体-----------------------------*/
-	stmts := p.statement_local()
+	stmts := p.statementLocal()
 	/*-----------------------循环体-----------------------------*/
 
 	p.eat(RBRCS,
@@ -616,7 +614,7 @@ func (p *Parser) foreach_statement() *ForeachStatement {
 	return NewForeachStatement(token, a, b, expr, stmts)
 }
 
-func (p *Parser) break_statement() *BreakStatement {
+func (p *Parser) breakStatement() *BreakStatement {
 	token := p.currentToken
 	p.eat(KEY_BREAK,
 		fmt.Sprintf("期望是'break',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
@@ -624,7 +622,7 @@ func (p *Parser) break_statement() *BreakStatement {
 	return NewBreakStatement(token)
 }
 
-func (p *Parser) continue_statement() *ContinueStatement {
+func (p *Parser) continueStatement() *ContinueStatement {
 	token := p.currentToken
 	p.eat(KEY_CONTINUE,
 		fmt.Sprintf("期望是'continue',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
@@ -632,7 +630,7 @@ func (p *Parser) continue_statement() *ContinueStatement {
 	return NewContinueStatement(token)
 }
 
-func (p *Parser) statement_local() *LocalCompoundStatement {
+func (p *Parser) statementLocal() *LocalCompoundStatement {
 	token := p.currentToken
 	max := 8
 	cnt := 0
@@ -650,23 +648,23 @@ STATEMENT_LOCAL_LOOP:
 		case KEY_IF:
 			p.eat(KEY_IF,
 				fmt.Sprintf("期望是'if',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			stmts[cnt] = p.if_statement()
+			stmts[cnt] = p.ifStatement()
 		case KEY_FOR:
 			p.eat(KEY_FOR,
 				fmt.Sprintf("期望是'if',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			stmts[cnt] = p.for_statement()
+			stmts[cnt] = p.forStatement()
 		case KEY_BREAK:
-			stmts[cnt] = p.break_statement()
+			stmts[cnt] = p.breakStatement()
 		case KEY_CONTINUE:
-			stmts[cnt] = p.continue_statement()
+			stmts[cnt] = p.continueStatement()
 		case KEY_FOREACH:
 			p.eat(KEY_FOREACH,
 				fmt.Sprintf("期望是'foreach',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			stmts[cnt] = p.foreach_statement()
+			stmts[cnt] = p.foreachStatement()
 		case KEY_RETURN:
 			p.eat(KEY_RETURN,
 				fmt.Sprintf("期望是'return',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			stmts[cnt] = p.return_statement()
+			stmts[cnt] = p.returnStatement()
 		default: //或是赋值 或是表达式
 			myVar := p.expr()
 			if myVar == nil {
@@ -693,7 +691,7 @@ STATEMENT_LOCAL_LOOP:
 	return NewLocalCompoundStatement(token, stmts[:cnt])
 }
 
-func (p *Parser) return_statement() *ReturnStatement {
+func (p *Parser) returnStatement() *ReturnStatement {
 	token := p.currentToken
 	cnt := 0
 	max := 8
@@ -753,7 +751,7 @@ func (p *Parser) params() *Param {
 	return NewParam(token, cnt, params[:cnt])
 }
 
-func (p *Parser) class_def() *Class {
+func (p *Parser) classDef() *Class {
 	token := p.currentToken
 	cname := p.variable()
 
@@ -784,7 +782,7 @@ func (p *Parser) class_def() *Class {
 		if p.currentToken.valueType == KEY_FUNC {
 			p.eat(KEY_FUNC,
 				fmt.Sprintf("期望是'func',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			init[cnt] = p.func_def()
+			init[cnt] = p.funcDef()
 			if init[cnt].getName() == cname.name {
 				isExist = true
 			}
@@ -802,7 +800,7 @@ func (p *Parser) class_def() *Class {
 				init[cnt] = tmp
 				cnt++
 			} else {
-				g_error.error(fmt.Sprintf("无效赋值语句,位置[%v:%v:%v]",
+				gError.error(fmt.Sprintf("无效赋值语句,位置[%v:%v:%v]",
 					curToken.file, curToken.line, curToken.pos))
 			}
 		}
@@ -819,7 +817,7 @@ func (p *Parser) class_def() *Class {
 	return NewClass(token, cname, parent, init[:cnt])
 }
 
-func (p *Parser) func_def() *Func {
+func (p *Parser) funcDef() *Func {
 	token := p.currentToken
 
 	name := p.currentToken.value
@@ -834,13 +832,13 @@ func (p *Parser) func_def() *Func {
 
 	p.eat(LBRCS,
 		fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) // {
-	body := p.statement_local() //body
+	body := p.statementLocal() //body
 	p.eat(RBRCS,
 		fmt.Sprintf("期望是'}',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos)) // }
 	return NewFunc(false, token, name, param, body)
 }
 
-func (p *Parser) global_compound_statement() *GlobalCompoundStatement {
+func (p *Parser) globalCompoundStatement() *GlobalCompoundStatement {
 	token := p.currentToken
 	max := 8
 	cnt := 0
@@ -857,31 +855,31 @@ func (p *Parser) global_compound_statement() *GlobalCompoundStatement {
 		case KEY_CLASS:
 			p.eat(KEY_CLASS,
 				fmt.Sprintf("期望是'class',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			nodes[cnt] = p.class_def()
+			nodes[cnt] = p.classDef()
 		case KEY_FUNC:
 			p.eat(KEY_FUNC,
 				fmt.Sprintf("期望是'func',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			nodes[cnt] = p.func_def()
+			nodes[cnt] = p.funcDef()
 		case KEY_IF:
 			p.eat(KEY_IF,
 				fmt.Sprintf("期望是'if',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			nodes[cnt] = p.if_statement()
+			nodes[cnt] = p.ifStatement()
 		case KEY_FOR:
 			p.eat(KEY_FOR,
 				fmt.Sprintf("期望是'if',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			nodes[cnt] = p.for_statement()
+			nodes[cnt] = p.forStatement()
 		case KEY_FOREACH:
 			p.eat(KEY_FOREACH,
 				fmt.Sprintf("期望是'foreach',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			nodes[cnt] = p.foreach_statement()
+			nodes[cnt] = p.foreachStatement()
 		case KEY_BREAK:
-			nodes[cnt] = p.break_statement()
+			nodes[cnt] = p.breakStatement()
 		case KEY_CONTINUE:
-			nodes[cnt] = p.continue_statement()
+			nodes[cnt] = p.continueStatement()
 		case KEY_RETURN:
 			p.eat(KEY_RETURN,
 				fmt.Sprintf("期望是'return',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-			nodes[cnt] = p.return_statement()
+			nodes[cnt] = p.returnStatement()
 		default: //或是赋值 或是表达式
 			myVar := p.expr()
 			curToken := p.currentToken
@@ -902,15 +900,15 @@ func (p *Parser) global_compound_statement() *GlobalCompoundStatement {
 }
 
 func (p *Parser) program() AstNode {
-	myRet := p.global_compound_statement()
+	myRet := p.globalCompoundStatement()
 
 	return myRet
 }
 
 func (p *Parser) parser() {
-	_, err := p.program().visit(g_symbols)
+	_, err := p.program().visit(gSymbols)
 	if err != nil {
-		g_statement_stack.clear()
+		gStatementStack.clear()
 		fmt.Printf("%v\n", err)
 	}
 }

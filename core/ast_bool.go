@@ -17,7 +17,7 @@ func NewBoolean(token *Token) *Boolean {
 	if token.valueType == BOOLEAN {
 		b.value = StringToBool(token.value)
 	} else {
-		g_error.error(fmt.Sprintf("无效布尔类型：%v, %d:%d", val, token.line, token.pos))
+		gError.error(fmt.Sprintf("无效布尔类型：%v, %d:%d", val, token.line, token.pos))
 	}
 
 	return b
@@ -40,7 +40,7 @@ func (n *Boolean) _String() string {
 }
 
 func (n *Boolean) String() string {
-	if g_is_debug {
+	if gIsDebug {
 		return fmt.Sprintf("({type=%v}, {value=%v})", n.token.valueType, n.value)
 	}
 	return n._String()
@@ -51,7 +51,7 @@ func (n *Boolean) equal(ast AstNode) AstNode {
 	case *Boolean:
 		return &Boolean{value: n.value == val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
@@ -61,7 +61,7 @@ func (n *Boolean) noteq(ast AstNode) AstNode {
 	case *Boolean:
 		return &Boolean{value: n.value != val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
@@ -71,7 +71,7 @@ func (n *Boolean) and(ast AstNode) AstNode {
 	case *Boolean:
 		return &Boolean{value: n.value && val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
@@ -81,7 +81,7 @@ func (n *Boolean) or(ast AstNode) AstNode {
 	case *Boolean:
 		return &Boolean{value: n.value || val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }

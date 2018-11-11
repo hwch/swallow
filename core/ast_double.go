@@ -15,7 +15,7 @@ func NewDouble(token *Token) *Double {
 	num := &Double{token: token}
 
 	if v, err := strconv.ParseFloat(token.value, 64); err != nil {
-		g_error.error(fmt.Sprintf("传入无效数字类型：%v", token.value))
+		gError.error(fmt.Sprintf("传入无效数字类型：%v", token.value))
 	} else {
 		num.value = v
 	}
@@ -36,7 +36,7 @@ func (n *Double) clone() AstNode {
 }
 
 func (n *Double) String() string {
-	if g_is_debug {
+	if gIsDebug {
 		return fmt.Sprintf("({type=%v}, {value=%f})", n.token.valueType, n.value)
 	}
 	return fmt.Sprintf("%f", n.value)
@@ -54,7 +54,7 @@ func (n *Double) add(ast AstNode) AstNode {
 	case *Double:
 		return &Double{value: n.value + val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
 	}
 	return nil
 }
@@ -66,7 +66,7 @@ func (n *Double) minus(ast AstNode) AstNode {
 	case *Double:
 		return &Double{value: n.value - val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v-%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v-%v", n.token, ast))
 	}
 	return nil
 }
@@ -78,7 +78,7 @@ func (n *Double) multi(ast AstNode) AstNode {
 	case *Double:
 		return &Double{value: n.value * val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v*%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v*%v", n.token, ast))
 	}
 	return nil
 }
@@ -90,7 +90,7 @@ func (n *Double) div(ast AstNode) AstNode {
 	case *Double:
 		return &Double{value: n.value / val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v/%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v/%v", n.token, ast))
 	}
 	return nil
 }
@@ -102,7 +102,7 @@ func (n *Double) great(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: n.value > float64(val.value)}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
 	}
 	return nil
 }
@@ -114,7 +114,7 @@ func (n *Double) less(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: n.value < val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func (n *Double) geq(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: n.value >= val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
 	}
 	return nil
 }
@@ -138,7 +138,7 @@ func (n *Double) leq(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: n.value <= val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
 	}
 	return nil
 }
@@ -150,7 +150,7 @@ func (n *Double) equal(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: n.value == val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }

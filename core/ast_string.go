@@ -46,7 +46,7 @@ func (n *String) visit(scope *ScopedSymbolTable) (AstNode, error) {
 }
 
 func (n *String) String() string {
-	if g_is_debug {
+	if gIsDebug {
 		return fmt.Sprintf("({type=%v}, {value=%s})", n.token.valueType, n.value)
 	}
 	return fmt.Sprintf("'%v'", n.value)
@@ -56,11 +56,11 @@ func (n *String) String() string {
 func (n *String) add(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Integer:
-		return &String{value: fmt.Sprintf("%d%s", n.value, val.value)}
+		return &String{value: fmt.Sprintf("%v%v", n.value, val.value)}
 	case *String:
 		return &String{value: n.value + val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
 	}
 	return nil
 }
@@ -70,7 +70,7 @@ func (n *String) great(ast AstNode) AstNode {
 	case *String:
 		return &Boolean{value: n.value > val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
 	}
 	return nil
 }
@@ -80,7 +80,7 @@ func (n *String) less(ast AstNode) AstNode {
 	case *String:
 		return &Boolean{value: n.value < val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
 	}
 	return nil
 }
@@ -90,7 +90,7 @@ func (n *String) geq(ast AstNode) AstNode {
 	case *String:
 		return &Boolean{value: n.value >= val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
 	}
 	return nil
 }
@@ -100,7 +100,7 @@ func (n *String) leq(ast AstNode) AstNode {
 	case *String:
 		return &Boolean{value: n.value <= val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
 	}
 	return nil
 }
@@ -110,7 +110,7 @@ func (n *String) equal(ast AstNode) AstNode {
 	case *String:
 		return &Boolean{value: n.value == val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
@@ -118,7 +118,7 @@ func (n *String) equal(ast AstNode) AstNode {
 func (n *String) index(ast AstNode) AstNode {
 	idx, ok := ast.(*Integer)
 	if !ok {
-		g_error.error(fmt.Sprintf("无效索引值[%v]", ast))
+		gError.error(fmt.Sprintf("无效索引值[%v]", ast))
 	}
 	return &String{value: n.value[idx.value : idx.value+1]}
 }
@@ -131,7 +131,7 @@ func (n *String) slice(begin, end AstNode) AstNode {
 	case *Empty:
 		b = 0
 	default:
-		g_error.error(fmt.Sprintf("无效索引值[%v]", begin))
+		gError.error(fmt.Sprintf("无效索引值[%v]", begin))
 	}
 
 	switch v := end.(type) {
@@ -140,7 +140,7 @@ func (n *String) slice(begin, end AstNode) AstNode {
 	case *Empty:
 		e = int64(len(n.value))
 	default:
-		g_error.error(fmt.Sprintf("无效索引值[%v]", end))
+		gError.error(fmt.Sprintf("无效索引值[%v]", end))
 	}
 
 	return &String{value: n.value[b:e]}

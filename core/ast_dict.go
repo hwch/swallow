@@ -22,15 +22,16 @@ func (d *Dict) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	if !d.isInit {
 		d.vals = make(map[string]AstNode)
 		for k, v := range d.tmp {
-			if key, err := k.visit(scope); err != nil {
+			key, err := k.visit(scope)
+			if err != nil {
 				return nil, err
-			} else {
-				if val, err := v.visit(scope); err != nil {
-					return nil, err
-				} else {
-					d.vals[fmt.Sprintf("%v", key)] = val
-				}
 			}
+			val, err := v.visit(scope)
+			if err != nil {
+				return nil, err
+			}
+			d.vals[fmt.Sprintf("%v", key)] = val
+
 		}
 		d.tmp = nil //释放内存
 		d.isInit = true
@@ -42,14 +43,14 @@ func (d *Dict) visit(scope *ScopedSymbolTable) (AstNode, error) {
 func (d *Dict) index(ast AstNode) AstNode {
 	v, ok := d.vals[fmt.Sprintf("%v", ast)]
 	if !ok {
-		g_error.error(fmt.Sprintf("无效KEY值[%v]", ast))
+		gError.error(fmt.Sprintf("无效KEY值[%v]", ast))
 	}
 	return v
 }
 
 func (l *Dict) String() string {
 	s := ""
-	if g_is_debug {
+	if gIsDebug {
 		s = fmt.Sprintf("Dict{")
 		for k, v := range l.vals {
 			s += fmt.Sprintf("%v: %v, ", k, v)

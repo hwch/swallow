@@ -4,9 +4,9 @@ import (
 	"fmt"
 )
 
-var g_symbols *ScopedSymbolTable
-var g_builtin *BuiltinSymbolTable
-var g_statement_stack *StatementStack
+var gSymbols *ScopedSymbolTable
+var gBuiltin *BuiltinSymbolTable
+var gStatementStack *StatementStack
 
 type StatementStack struct {
 	esp   int
@@ -110,17 +110,15 @@ func (s *BuiltinSymbolTable) builtin(val string) (AstNode, bool) {
 func (s *ScopedSymbolTable) lookup(val string) (AstNode, bool) {
 	if vv, ook := s.vals[val]; ook {
 		return vv, true
-	} else {
-		if s.enclosingScope != nil {
-			return s.enclosingScope.lookup(val)
-		}
+	}
+	if s.enclosingScope != nil {
+		return s.enclosingScope.lookup(val)
 	}
 
 	return nil, false
 }
 
-func (s *ScopedSymbolTable) class_attr(val string) (AstNode, bool) {
-
+func (s *ScopedSymbolTable) classAttr(val string) (AstNode, bool) {
 	if vv, ook := s.vals[val]; ook {
 		return vv, true
 	}

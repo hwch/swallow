@@ -7,11 +7,11 @@ import (
 )
 
 type Lexer struct {
-	save_pos int // 前一个词素结束位置
-	cur_pos  int // 分析字符串当前位置
-	file     string
-	line     int
-	text     string
+	savePos int // 前一个词素结束位置
+	curPos  int // 分析字符串当前位置
+	file    string
+	line    int
+	text    string
 }
 
 func NewLexer(text, file string) *Lexer {
@@ -23,130 +23,130 @@ func (l *Lexer) nextLine() {
 	case "windows": // 跳过 \n
 		fallthrough
 	case "darwin": //跳过 \r
-		l.cur_pos++
+		l.curPos++
 		fallthrough
 	case "linux":
 		l.line++
 	default:
-		g_error.error(fmt.Sprintf("未知操作系统平台:%v\n", runtime.GOOS))
+		gError.error(fmt.Sprintf("未知操作系统平台:%v\n", runtime.GOOS))
 	}
 }
 
 func (l *Lexer) fakeLine() {
 	switch runtime.GOOS {
 	case "windows": // 跳过 \n
-		if l.cur_pos < len(l.text) {
-			if l.text[l.cur_pos] != '\r' {
-				g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-1]))
+		if l.curPos < len(l.text) {
+			if l.text[l.curPos] != '\r' {
+				gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-1]))
 			} else {
-				l.cur_pos++
+				l.curPos++
 			}
 		} else {
-			g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-1]))
+			gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-1]))
 		}
-		if l.cur_pos < len(l.text) {
-			if l.text[l.cur_pos] != '\n' {
-				g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-2]))
+		if l.curPos < len(l.text) {
+			if l.text[l.curPos] != '\n' {
+				gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-2]))
 			} else {
-				l.cur_pos++
+				l.curPos++
 			}
 		} else {
-			g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-2]))
+			gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-2]))
 		}
 
 	case "darwin": //跳过 \r
-		if l.cur_pos < len(l.text) {
-			if l.text[l.cur_pos] != '\n' {
-				g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-2]))
+		if l.curPos < len(l.text) {
+			if l.text[l.curPos] != '\n' {
+				gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-2]))
 			} else {
-				l.cur_pos++
+				l.curPos++
 			}
 		} else {
-			g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-2]))
+			gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-2]))
 		}
-		if l.cur_pos < len(l.text) {
-			if l.text[l.cur_pos] != '\r' {
-				g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-1]))
+		if l.curPos < len(l.text) {
+			if l.text[l.curPos] != '\r' {
+				gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-1]))
 			} else {
-				l.cur_pos++
+				l.curPos++
 			}
 		} else {
-			g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-1]))
+			gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-1]))
 		}
 	case "linux":
-		if l.cur_pos < len(l.text) {
-			if l.text[l.cur_pos] != '\n' {
-				g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-2]))
+		if l.curPos < len(l.text) {
+			if l.text[l.curPos] != '\n' {
+				gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-2]))
 			} else {
-				l.cur_pos++
+				l.curPos++
 			}
 		} else {
-			g_error.error(fmt.Sprintf("无效字符:%v\n", l.text[l.cur_pos-2]))
+			gError.error(fmt.Sprintf("无效字符:%v\n", l.text[l.curPos-2]))
 		}
 	default:
-		g_error.error(fmt.Sprintf("未知操作系统平台:%v\n", runtime.GOOS))
+		gError.error(fmt.Sprintf("未知操作系统平台:%v\n", runtime.GOOS))
 	}
 }
 
 func (l *Lexer) rollback(token *Token) {
-	l.cur_pos = token.pos
-	l.save_pos = token.pos
+	l.curPos = token.pos
+	l.savePos = token.pos
 }
 
 func (l *Lexer) getNumToken() *Token {
 	typ := INVALID
 	iLen := len(l.text)
 	state := STATE_INIT
-	for ; l.cur_pos < iLen; l.cur_pos++ {
+	for ; l.curPos < iLen; l.curPos++ {
 		switch state {
 		case STATE_INIT:
-			if l.text[l.cur_pos] == '0' {
+			if l.text[l.curPos] == '0' {
 				typ = INT
 				state = STATE_INT_0
-			} else if l.text[l.cur_pos] >= '1' && l.text[l.cur_pos] <= '9' {
+			} else if l.text[l.curPos] >= '1' && l.text[l.curPos] <= '9' {
 				typ = INT
 				state = STATE_INT
 			} else {
 				state = STATE_END
 			}
 		case STATE_INT_0:
-			if l.text[l.cur_pos] == '.' {
+			if l.text[l.curPos] == '.' {
 				typ = DOUBLE
 				state = STATE_DOUBLE
-			} else if l.text[l.cur_pos] == 'x' || l.text[l.cur_pos] == 'X' {
+			} else if l.text[l.curPos] == 'x' || l.text[l.curPos] == 'X' {
 				typ = HEX_INT
 				state = STATE_HEX
-			} else if l.text[l.cur_pos] >= '0' && l.text[l.cur_pos] <= '7' {
+			} else if l.text[l.curPos] >= '0' && l.text[l.curPos] <= '7' {
 				typ = OCT_INT
 				state = STATE_INT_OCTAL
 			} else {
 				state = STATE_END
 			}
 		case STATE_INT:
-			if l.text[l.cur_pos] == '.' {
+			if l.text[l.curPos] == '.' {
 				typ = DOUBLE
 				state = STATE_DOUBLE
-			} else if l.text[l.cur_pos] >= '0' && l.text[l.cur_pos] <= '9' {
+			} else if l.text[l.curPos] >= '0' && l.text[l.curPos] <= '9' {
 				//
 			} else {
 				state = STATE_END
 			}
 		case STATE_INT_OCTAL:
-			if l.text[l.cur_pos] >= '0' && l.text[l.cur_pos] <= '7' {
+			if l.text[l.curPos] >= '0' && l.text[l.curPos] <= '7' {
 				//
 			} else {
 				state = STATE_END
 			}
 		case STATE_HEX:
-			if (l.text[l.cur_pos] >= '0' && l.text[l.cur_pos] <= '7') ||
-				(l.text[l.cur_pos] >= 'a' && l.text[l.cur_pos] <= 'f') ||
-				(l.text[l.cur_pos] >= 'A' && l.text[l.cur_pos] <= 'F') {
+			if (l.text[l.curPos] >= '0' && l.text[l.curPos] <= '7') ||
+				(l.text[l.curPos] >= 'a' && l.text[l.curPos] <= 'f') ||
+				(l.text[l.curPos] >= 'A' && l.text[l.curPos] <= 'F') {
 				//
 			} else {
 				state = STATE_END
 			}
 		case STATE_DOUBLE:
-			if l.text[l.cur_pos] >= '0' && l.text[l.cur_pos] <= '9' {
+			if l.text[l.curPos] >= '0' && l.text[l.curPos] <= '9' {
 				//
 			} else {
 				state = STATE_END
@@ -156,234 +156,234 @@ func (l *Lexer) getNumToken() *Token {
 			break
 		}
 	}
-	val := l.text[l.save_pos:l.cur_pos]
+	val := l.text[l.savePos:l.curPos]
 
-	l.save_pos = l.cur_pos
-	return NewToken(typ, val, l.line, l.save_pos, l.file)
+	l.savePos = l.curPos
+	return NewToken(typ, val, l.line, l.savePos, l.file)
 
 }
 
 func (l *Lexer) peek() uint8 {
-	if l.cur_pos+1 >= len(l.text) {
+	if l.curPos+1 >= len(l.text) {
 		return 0
 	}
-	return l.text[l.cur_pos+1]
+	return l.text[l.curPos+1]
 }
 
 func (l *Lexer) getChar() *Token {
 	line := l.line
-	l.cur_pos++ //略过符号 第一个"
-	for l.cur_pos < len(l.text) {
-		if l.text[l.cur_pos] == '\n' || l.text[l.cur_pos] == '\r' {
-			l.cur_pos++
+	l.curPos++ //略过符号 第一个"
+	for l.curPos < len(l.text) {
+		if l.text[l.curPos] == '\n' || l.text[l.curPos] == '\r' {
+			l.curPos++
 			l.nextLine()
 			continue
 		}
-		if l.text[l.cur_pos] == '\'' && l.text[l.cur_pos-1] != '\\' {
+		if l.text[l.curPos] == '\'' && l.text[l.curPos-1] != '\\' {
 			break
 		}
-		l.cur_pos++
+		l.curPos++
 	}
-	l.cur_pos++ //略过符号 "
-	save_pos := l.save_pos
-	l.save_pos = l.cur_pos
-	dvalue := l.text[save_pos:l.cur_pos]
-	return NewToken(STRING, dvalue, line, save_pos, l.file)
+	l.curPos++ //略过符号 "
+	savePos := l.savePos
+	l.savePos = l.curPos
+	dvalue := l.text[savePos:l.curPos]
+	return NewToken(STRING, dvalue, line, savePos, l.file)
 }
 
 func (l *Lexer) getString() *Token {
 	line := l.line
-	l.cur_pos++ //略过符号 第一个"
-	for l.cur_pos < len(l.text) {
-		if l.text[l.cur_pos] == '\n' || l.text[l.cur_pos] == '\r' {
-			l.cur_pos++
+	l.curPos++ //略过符号 第一个"
+	for l.curPos < len(l.text) {
+		if l.text[l.curPos] == '\n' || l.text[l.curPos] == '\r' {
+			l.curPos++
 			l.nextLine()
 			continue
 		}
-		if l.text[l.cur_pos] == '"' && l.text[l.cur_pos-1] != '\\' {
+		if l.text[l.curPos] == '"' && l.text[l.curPos-1] != '\\' {
 			break
 		}
-		l.cur_pos++
+		l.curPos++
 	}
-	l.cur_pos++ //略过符号 "
-	save_pos := l.save_pos
-	l.save_pos = l.cur_pos
-	dvalue := l.text[save_pos:l.cur_pos]
-	return NewToken(STRING, dvalue, line, save_pos, l.file)
+	l.curPos++ //略过符号 "
+	savePos := l.savePos
+	l.savePos = l.curPos
+	dvalue := l.text[savePos:l.curPos]
+	return NewToken(STRING, dvalue, line, savePos, l.file)
 }
 
 func (l *Lexer) getSymbolToken() *Token {
-	currentChar := l.text[l.cur_pos]
-	save_pos := l.save_pos
+	currentChar := l.text[l.curPos]
+	savePos := l.savePos
 
 	switch currentChar {
 	case '+':
 		if l.peek() == '+' {
 
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(PLUS_PLUS, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(PLUS_PLUS, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		} else if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(PLUS_EQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(PLUS_EQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(PLUS, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(PLUS, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '-':
 
 		if l.peek() == '-' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(MINUS_MINUS, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(MINUS_MINUS, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		} else if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(MINUS_EQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(MINUS_EQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(MINUS, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(MINUS, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '*':
 		if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(MULTI_EQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(MULTI_EQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(MULTI, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(MULTI, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '/':
 		if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(DIV_EQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(DIV_EQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(DIV, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(DIV, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '%':
 		if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(MOD_EQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(MOD_EQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(MOD, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(MOD, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '&':
 		if l.peek() == '&' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(AND, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(AND, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(REF, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(REF, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '|':
 		if l.peek() == '|' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(OR, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(OR, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(BITOR, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(BITOR, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '(':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(LPRNTH, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(LPRNTH, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case ')':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(RPRNTH, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(RPRNTH, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '{':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(LBRCS, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(LBRCS, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '}':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(RBRCS, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(RBRCS, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '>':
 		if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(GEQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(GEQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		} else if l.peek() == '>' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(RSHIFT, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(RSHIFT, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(GREAT, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(GREAT, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '<':
 		if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(LEQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(LEQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		} else if l.peek() == '%' {
 			return l.getBlockComment()
 		} else if l.peek() == '<' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(LSHIFT, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(LSHIFT, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(LESS, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(LESS, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case ',':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(COMMA, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(COMMA, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '=':
 		if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(EQUAL, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(EQUAL, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(ASSIGN, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(ASSIGN, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '!':
 		if l.peek() == '=' {
-			l.cur_pos += 2
-			l.save_pos = l.cur_pos
-			return NewToken(NOT_EQ, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+			l.curPos += 2
+			l.savePos = l.curPos
+			return NewToken(NOT_EQ, l.text[savePos:l.curPos], l.line, savePos, l.file)
 		}
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(NOT, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(NOT, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case ';':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(SEMICOLON, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(SEMICOLON, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '^':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(XOR, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(XOR, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '[':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(LBRK, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(LBRK, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case ']':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(RBRK, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(RBRK, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '.':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(QUOTE, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(QUOTE, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case ':':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(COLON, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(COLON, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '@':
-		l.cur_pos++
-		l.save_pos = l.cur_pos
-		return NewToken(INHERIT, l.text[save_pos:l.cur_pos], l.line, save_pos, l.file)
+		l.curPos++
+		l.savePos = l.curPos
+		return NewToken(INHERIT, l.text[savePos:l.curPos], l.line, savePos, l.file)
 	case '#':
 		return l.getLineComment()
 	case '\'':
@@ -391,7 +391,7 @@ func (l *Lexer) getSymbolToken() *Token {
 	case '"':
 		return l.getString()
 	default:
-		g_error.error(fmt.Sprintf("无效符号[%c]\n", currentChar))
+		gError.error(fmt.Sprintf("无效符号[%c]\n", currentChar))
 	}
 
 	return nil
@@ -434,88 +434,89 @@ func (l *Lexer) judgeType(dvalue string) TokenType {
 	case "continue":
 		typ = KEY_CONTINUE
 	}
+
 	return typ
 }
 
 func (l *Lexer) getLineComment() *Token {
 	line := l.line
-	pos := l.save_pos
-	for l.cur_pos < len(l.text) {
-		if l.text[l.cur_pos] == '\r' || l.text[l.cur_pos] == '\n' {
+	pos := l.savePos
+	for l.curPos < len(l.text) {
+		if l.text[l.curPos] == '\r' || l.text[l.curPos] == '\n' {
 			l.nextLine()
 			break
 		}
-		l.cur_pos++
+		l.curPos++
 	}
-	l.save_pos = l.cur_pos
-	dvalue := l.text[pos:l.cur_pos]
+	l.savePos = l.curPos
+	dvalue := l.text[pos:l.curPos]
 	return NewToken(LINE_COMMENT, dvalue, line, pos, l.file)
 }
 
 func (l *Lexer) getBlockComment() *Token {
 	line := l.line
-	pos := l.save_pos
-	for l.cur_pos < len(l.text) {
-		if l.text[l.cur_pos] == '\r' ||
-			l.text[l.cur_pos] == '\n' {
-			l.cur_pos++
+	pos := l.savePos
+	for l.curPos < len(l.text) {
+		if l.text[l.curPos] == '\r' ||
+			l.text[l.curPos] == '\n' {
+			l.curPos++
 			l.nextLine()
 			continue
 		}
-		if l.text[l.cur_pos] == '%' {
-			if l.cur_pos+1 < len(l.text) && l.text[l.cur_pos+1] == '>' {
-				l.cur_pos += 2
+		if l.text[l.curPos] == '%' {
+			if l.curPos+1 < len(l.text) && l.text[l.curPos+1] == '>' {
+				l.curPos += 2
 				break
 			}
 		}
-		l.cur_pos++
+		l.curPos++
 	}
-	l.save_pos = l.cur_pos
-	dvalue := l.text[pos:l.cur_pos]
+	l.savePos = l.curPos
+	dvalue := l.text[pos:l.curPos]
 	return NewToken(LINE_COMMENT, dvalue, line, pos, l.file)
 
 }
 
 func (l *Lexer) getIdent() *Token {
 	line := l.line
-	pos := l.save_pos
-	for l.cur_pos < len(l.text) {
-		if l.text[l.cur_pos] == '_' ||
-			unicode.IsDigit(rune(l.text[l.cur_pos])) ||
-			unicode.IsLetter(rune(l.text[l.cur_pos])) {
-			l.cur_pos++
+	pos := l.savePos
+	for l.curPos < len(l.text) {
+		if l.text[l.curPos] == '_' ||
+			unicode.IsDigit(rune(l.text[l.curPos])) ||
+			unicode.IsLetter(rune(l.text[l.curPos])) {
+			l.curPos++
 			continue
 		}
 		break
 	}
-	dvalue := l.text[pos:l.cur_pos]
-	l.save_pos = l.cur_pos
+	dvalue := l.text[pos:l.curPos]
+	l.savePos = l.curPos
 	return NewToken(l.judgeType(dvalue), dvalue, line, pos, l.file)
 }
 
 func (l *Lexer) getNextToken() *Token {
-	for l.cur_pos < len(l.text) {
-		if l.text[l.cur_pos] == '\\' { // \\r\n,\\n\r,\\n 续行符，忽略
-			l.cur_pos++
+	for l.curPos < len(l.text) {
+		if l.text[l.curPos] == '\\' { // \\r\n,\\n\r,\\n 续行符，忽略
+			l.curPos++
 			l.fakeLine()
-			l.save_pos = l.cur_pos
-		} else if l.text[l.cur_pos] == '\r' || l.text[l.cur_pos] == '\n' {
-			l.cur_pos++
+			l.savePos = l.curPos
+		} else if l.text[l.curPos] == '\r' || l.text[l.curPos] == '\n' {
+			l.curPos++
 			l.nextLine()
-			l.save_pos = l.cur_pos
-		} else if unicode.IsSpace(rune(l.text[l.cur_pos])) {
-			l.cur_pos++
-			l.save_pos = l.cur_pos
-		} else if l.text[l.cur_pos] == '_' || unicode.IsLetter(rune(l.text[l.cur_pos])) {
-			l.cur_pos++
+			l.savePos = l.curPos
+		} else if unicode.IsSpace(rune(l.text[l.curPos])) {
+			l.curPos++
+			l.savePos = l.curPos
+		} else if l.text[l.curPos] == '_' || unicode.IsLetter(rune(l.text[l.curPos])) {
+			l.curPos++
 			return l.getIdent()
-		} else if unicode.IsDigit(rune(l.text[l.cur_pos])) {
+		} else if unicode.IsDigit(rune(l.text[l.curPos])) {
 			return l.getNumToken()
 		} else {
 			return l.getSymbolToken()
 		}
 	}
-	save_pos := l.save_pos
-	l.save_pos = l.cur_pos
-	return NewToken(EOF, l.text[save_pos:l.cur_pos], l.line, l.save_pos, l.file)
+	savePos := l.savePos
+	l.savePos = l.curPos
+	return NewToken(EOF, l.text[savePos:l.curPos], l.line, l.savePos, l.file)
 }

@@ -63,8 +63,8 @@ func NewEmpty(token *Token) *Empty {
 	return &Empty{token: token}
 }
 
-func NewFuncCallOperator(token *Token, func_name AstNode, params []AstNode) *FuncCallOperator {
-	return &FuncCallOperator{name: func_name, params: params, token: token}
+func NewFuncCallOperator(token *Token, funcName AstNode, params []AstNode) *FuncCallOperator {
+	return &FuncCallOperator{name: funcName, params: params, token: token}
 }
 
 func NewBinOperator(left AstNode, oper *Token, right AstNode) *BinOperator {
@@ -108,11 +108,11 @@ func NewVariable(token *Token) *Variable {
 }
 
 func (f *FuncCallOperator) getName() string {
-	fun_name, err := f.name.rvalue()
+	funName, err := f.name.rvalue()
 	if err != nil {
-		g_error.error(fmt.Sprintf("函数[%v]引用错误", f.name))
+		gError.error(fmt.Sprintf("函数[%v]引用错误", f.name))
 	}
-	return fun_name.getName()
+	return funName.getName()
 }
 
 func (f *FuncCallOperator) exec(fname AstNode, isExec *bool, scope *ScopedSymbolTable) (AstNode, error) {
@@ -120,10 +120,9 @@ func (f *FuncCallOperator) exec(fname AstNode, isExec *bool, scope *ScopedSymbol
 	case *Func:
 		fn.params.set(f.params) //给参数赋值
 		if fn.isBuiltin {
-			return builtin_func(fn, scope)
-		} else {
-			return fn.evaluation(scope)
+			return builtinFunc(fn, scope)
 		}
+		return fn.evaluation(scope)
 	case *Class:
 		obj := NewClassObj(fn, f.params)
 		return obj.init(scope)
@@ -149,21 +148,21 @@ func (f *FuncCallOperator) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	}
 
 	isExec := true
-	if ret, err := f.exec(fn, &isExec, inScope); err != nil {
+	ret, err := f.exec(fn, &isExec, inScope)
+	if err != nil {
 		return ret, err
-	} else {
-		if isExec {
-			return ret, err
-		}
+	}
+	if isExec {
+		return ret, err
 	}
 
 	isFound := false
 	if fn, ok = inScope.lookup(fn.getName()); !ok {
-		if fn, ok = g_builtin.builtin(fn.getName()); !ok {
+		if fn, ok = gBuiltin.builtin(fn.getName()); !ok {
 			return nil, fmt.Errorf("函数[%v]未定义", f.name)
-		} else {
-			isFound = true
 		}
+		isFound = true
+
 	} else {
 		isFound = true
 	}
@@ -186,7 +185,7 @@ func (n *Variable) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	var sv AstNode
 	var ok bool
 	if sv, ok = scope.lookup(n.name); !ok {
-		if sv, ok = g_builtin.builtin(n.name); !ok {
+		if sv, ok = gBuiltin.builtin(n.name); !ok {
 			return nil, fmt.Errorf("%v未赋值或初始化", n.name)
 		}
 	}
@@ -209,7 +208,7 @@ func (a *AccessOperator) visit(scope *ScopedSymbolTable) (AstNode, error) {
 func (a *AttributeOperator) getScope(scope *ScopedSymbolTable) (*ScopedSymbolTable, AstNode) {
 	lv, err := a.left.visit(scope)
 	if err != nil {
-		g_error.error(fmt.Sprintf("%v", err))
+		gError.error(fmt.Sprintf("%v", err))
 	}
 
 	//if a.left.getName() == "this" {
@@ -235,7 +234,7 @@ func (a *AttributeOperator) visit(scope *ScopedSymbolTable) (AstNode, error) {
 func (b *BinOperator) getName() string {
 	ast, err := b.rvalue()
 	if err != nil {
-		g_error.error(fmt.Sprintf("%v", err))
+		gError.error(fmt.Sprintf("%v", err))
 	}
 	return ast.getName()
 }
@@ -375,14 +374,14 @@ func (b *BinOperator) String() string {
 }
 
 func (v *Variable) String() string {
-	if g_is_debug {
+	if gIsDebug {
 		return fmt.Sprintf("Variable(%v)", v.name)
 	}
 	return v.name
 }
 
 func (e *Empty) String() string {
-	if g_is_debug {
+	if gIsDebug {
 		return "Empty()"
 	}
 	return "nil"

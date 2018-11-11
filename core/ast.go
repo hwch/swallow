@@ -4,12 +4,11 @@ import (
 	"fmt"
 )
 
-var g_is_global_scope bool = false
-var g_is_debug bool
+var gIsGlobalScope bool
+var gIsDebug bool
 
 type Interpreter interface {
 	visit(scope *ScopedSymbolTable) (AstNode, error)
-	lvalue() (*ScopedSymbolTable, string, error)
 	rvalue() (AstNode, error)
 }
 
@@ -67,131 +66,131 @@ type Ast struct {
 }
 
 func (a Ast) add(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]+[%v]", a.v, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]+[%v]", a.v, ast))
 	return nil
 }
 
 func (a Ast) minus(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]-[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]-[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) multi(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]*[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]*[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) div(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]/[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]/[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) mod(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]%%[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]%%[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) great(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]>[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]>[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) less(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]<[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]<[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) geq(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]>=[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]>=[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) leq(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]<=[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]<=[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) equal(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]==[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]==[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) not() AstNode {
-	g_error.error(fmt.Sprintf("无效运算![%v]", a))
+	gError.error(fmt.Sprintf("无效运算![%v]", a))
 	return nil
 }
 
 func (a Ast) and(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]&&[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]&&[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) or(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]||[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]||[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) noteq(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]!=[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]!=[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) bitor(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]|[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]|[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) xor(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]^[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]^[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) bitand(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]&[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]&[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) lshift(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]>>[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]>>[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) rshift(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]<<[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v]<<[%v]", a, ast))
 	return nil
 }
 
 func (a Ast) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymbolTable, AstNode) {
-	g_error.error(fmt.Sprintf("无效运算[%v].[%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v].[%v]", a, ast))
 	return nil, nil
 }
 
 func (a Ast) index(ast AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v][%v]", a, ast))
+	gError.error(fmt.Sprintf("无效运算[%v][%v]", a, ast))
 	return nil
 }
 
 func (a Ast) slice(begin, end AstNode) AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v][%v:%v]", a, begin, end))
+	gError.error(fmt.Sprintf("无效运算[%v][%v:%v]", a, begin, end))
 	return nil
 }
 
 func (a Ast) neg() AstNode {
-	g_error.error(fmt.Sprintf("无效运算-[%v]", a))
+	gError.error(fmt.Sprintf("无效运算-[%v]", a))
 	return nil
 }
 func (a Ast) reverse() AstNode {
-	g_error.error(fmt.Sprintf("无效运算~[%v]", a))
+	gError.error(fmt.Sprintf("无效运算~[%v]", a))
 	return nil
 }
 
 func (a Ast) plusplus() AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]++", a))
+	gError.error(fmt.Sprintf("无效运算[%v]++", a))
 	return nil
 }
 
 func (a Ast) minusminus() AstNode {
-	g_error.error(fmt.Sprintf("无效运算[%v]++", a))
+	gError.error(fmt.Sprintf("无效运算[%v]++", a))
 	return nil
 }
 
@@ -199,21 +198,21 @@ func (a Ast) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return nil, fmt.Errorf("%v未实现visit(*ScopedSymbolTable)方法", a)
 }
 func (a Ast) clone() AstNode {
-	g_error.error(fmt.Sprintf("%v未实现clone()方法", a))
+	gError.error(fmt.Sprintf("%v未实现clone()方法", a))
 	return nil
 }
 
 func (a Ast) lvalue() (*ScopedSymbolTable, string, error) {
-	g_error.error(fmt.Sprintf("%v未实现lvalue()方法", a))
+	gError.error(fmt.Sprintf("%v未实现lvalue()方法", a))
 	return nil, "", nil
 }
 
 func (a Ast) rvalue() (AstNode, error) {
-	g_error.error(fmt.Sprintf("%v未实现rvalue()方法", a))
+	gError.error(fmt.Sprintf("%v未实现rvalue()方法", a))
 	return nil, nil
 }
 
 func (a Ast) getName() string {
-	g_error.error(fmt.Sprintf("%v未实现getName()方法", a))
+	gError.error(fmt.Sprintf("%v未实现getName()方法", a))
 	return ""
 }

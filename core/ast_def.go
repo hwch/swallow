@@ -50,7 +50,7 @@ func NewFunc(isBuiltin bool, token *Token, name string, params *Param, body *Loc
 }
 
 func NewParam(token *Token, num int, idx []string) *Param {
-	p := &Param{idx: idx, flag: num}
+	p := &Param{token: token, idx: idx, flag: num}
 	p.v = p
 	return p
 }
@@ -64,15 +64,15 @@ func (c *Class) visit(scope *ScopedSymbolTable) (AstNode, error) {
 		var v AstNode
 		var ok bool
 		if v, ok = scope.lookup(c.pname.name); !ok {
-			if v, ok = g_builtin.builtin(c.pname.name); !ok {
-				g_error.error(fmt.Sprintf("未找到类[%v]定义", c.pname.name))
+			if v, ok = gBuiltin.builtin(c.pname.name); !ok {
+				gError.error(fmt.Sprintf("未找到类[%v]定义", c.pname.name))
 			}
 
 		}
 		if vv, ok := v.(*Class); ok {
 			c.parent = vv
 		} else {
-			g_error.error(fmt.Sprintf("类[%v]继承[%v]无效", c.name.name, c.pname.name))
+			gError.error(fmt.Sprintf("类[%v]继承[%v]无效", c.name.name, c.pname.name))
 		}
 		c.isCheck = true
 	}
@@ -81,7 +81,7 @@ func (c *Class) visit(scope *ScopedSymbolTable) (AstNode, error) {
 }
 
 func (c *Class) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymbolTable, AstNode) {
-	g_error.error(fmt.Sprintf("未在类[%v]找到成员[%v]", c.name, ast.getName()))
+	gError.error(fmt.Sprintf("未在类[%v]找到成员[%v]", c.name, ast.getName()))
 	return nil, nil
 }
 
@@ -97,9 +97,9 @@ func (f *Func) visit(scope *ScopedSymbolTable) (AstNode, error) {
 func (f *Func) evaluation(scope *ScopedSymbolTable) (AstNode, error) {
 	inScope := NewScopedSymbolTable(scope.scopeName+"_func", scope.scopeLevel+1, scope)
 
-	g_statement_stack.push("func")
+	gStatementStack.push("func")
 	defer func() {
-		g_statement_stack.pop()
+		gStatementStack.pop()
 	}()
 
 	_, ok := f.params.visit(inScope)
@@ -120,7 +120,7 @@ func (f *Func) evaluation(scope *ScopedSymbolTable) (AstNode, error) {
 
 func (p *Param) set(parms []AstNode) {
 	if p.flag >= 0 && len(parms) != p.flag {
-		g_error.error(fmt.Sprintf("需要%d个参数，实际传入%d个参数", p.flag, len(parms)))
+		gError.error(fmt.Sprintf("需要%d个参数，实际传入%d个参数", p.flag, len(parms)))
 	}
 
 	p.value = parms
@@ -166,7 +166,7 @@ func (p *Param) String() string {
 
 func (f *Func) String() string {
 	s := ""
-	if g_is_debug {
+	if gIsDebug {
 		if f.isBuiltin {
 			s = fmt.Sprintf("内置函数：Func %v(%v){%v}", f.name, f.params, f.body)
 		} else {
@@ -182,7 +182,7 @@ func (f *Func) String() string {
 func (f *Class) String() string {
 	s := ""
 
-	if g_is_debug {
+	if gIsDebug {
 
 		ss := ""
 		for i := 0; i < len(f.mems); i++ {

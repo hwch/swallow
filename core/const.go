@@ -1,69 +1,17 @@
 package core
 
 type TokenType uint64
-type TreeFlag uint64
 type State uint64
-type DataType uint64
-type SymTabKey uint64
 type AstType uint64
 
 const (
-	STATE_DOUBLE     State = 0xa001 //
-	STATE_HEX        State = 0xa002
-	STATE_INT        State = 0xa003
-	STATE_KEY        State = 0xa004
-	STATE_KEY_C      State = 0xa005
-	STATE_KEY_CL     State = 0xa006
-	STATE_KEY_CLA    State = 0xa007
-	STATE_KEY_CLAS   State = 0xa008
-	STATE_KEY_CLASS  State = 0xa009
-	STATE_KEY_E      State = 0xa00a
-	STATE_KEY_EL     State = 0xa00b
-	STATE_KEY_ELI    State = 0xa00c
-	STATE_KEY_ELIF   State = 0xa00d
-	STATE_KEY_ELS    State = 0xa00e
-	STATE_KEY_ELSE   State = 0xa00f
-	STATE_KEY_F      State = 0xa010
-	STATE_KEY_FU     State = 0xa011
-	STATE_KEY_FO     State = 0xa012
-	STATE_KEY_FUN    State = 0xa013
-	STATE_KEY_FOR    State = 0xa014
-	STATE_KEY_FUNC   State = 0xa015
-	STATE_KEY_G      State = 0xa016
-	STATE_KEY_GL     State = 0xa017
-	STATE_KEY_GLO    State = 0xa018
-	STATE_KEY_GLOB   State = 0xa019
-	STATE_KEY_GLOBA  State = 0xa01a
-	STATE_KEY_GLOBAL State = 0xa01b
-	STATE_KEY_I      State = 0xa01c
-	STATE_KEY_IF     State = 0xa01d
-	STATE_KEY_R      State = 0xa01e
-	STATE_KEY_RE     State = 0xa01f
-	STATE_KEY_RET    State = 0xa020
-	STATE_KEY_RETU   State = 0xa021
-	STATE_KEY_RETUR  State = 0xa022
-	STATE_KEY_RETURN State = 0xa023
-	STATE_KEY_S      State = 0xa024
-	STATE_KEY_ST     State = 0xa025
-	STATE_KEY_STA    State = 0xa026
-	STATE_KEY_STAR   State = 0xa027
-	STATE_KEY_START  State = 0xa028
-	STATE_INT_0      State = 0xa029
-	STATE_KEY_IM     State = 0xa02a
-	STATE_KEY_IMP    State = 0xa02b
-	STATE_KEY_IMPO   State = 0xa02c
-	STATE_KEY_IMPOR  State = 0xa02d
-	STATE_KEY_IMPORT State = 0xa02e
-	STATE_INT_IVALID State = 0xa02f
-	STATE_INT_OCTAL  State = 0xa030
-	STATE_INIT       State = 0xaffe // 状态机初始状态
-	STATE_END        State = 0xafff // 状态机结束状态
-)
-
-const (
-	TREE_ROOT  TreeFlag = 0x10
-	TREE_LEFT  TreeFlag = 0x20
-	TREE_RIGHT TreeFlag = 0x40
+	STATE_DOUBLE    State = 0xa001 //
+	STATE_HEX       State = 0xa002
+	STATE_INT       State = 0xa003
+	STATE_INT_0     State = 0xa004
+	STATE_INT_OCTAL State = 0xa005
+	STATE_INIT      State = 0xaffe // 状态机初始状态
+	STATE_END       State = 0xafff // 状态机结束状态
 )
 
 const (
@@ -247,16 +195,4 @@ var typ = [...]string{
 
 func (t TokenType) String() string {
 	return typ[t&0x0fff]
-}
-
-const (
-	TYPE_INT    DataType = 0xe000
-	TYPE_STRING DataType = 0xe001
-	TYPE_DOUBLE DataType = 0xe002
-	TYPE_CLASS  DataType = 0xe003
-	TYPE_FUNC   DataType = 0xe004
-)
-
-func (key *SymTabKey) String() string {
-	return ""
 }

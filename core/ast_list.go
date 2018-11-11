@@ -33,7 +33,7 @@ func (l *List) visit(scope *ScopedSymbolTable) (AstNode, error) {
 
 func (l *List) String() string {
 	s := ""
-	if g_is_debug {
+	if gIsDebug {
 		s = fmt.Sprintf("Array[")
 		for i := 0; i < len(l.vals); i++ {
 
@@ -65,7 +65,7 @@ func (l *List) index(ast AstNode) AstNode {
 
 	idx, ok := ast.(*Integer)
 	if !ok {
-		g_error.error(fmt.Sprintf("无效索引值[%v]", ast))
+		gError.error(fmt.Sprintf("无效索引值[%v]", ast))
 	}
 
 	return l.vals[idx.value]
@@ -79,7 +79,7 @@ func (l *List) slice(begin, end AstNode) AstNode {
 	case *Empty:
 		b = 0
 	default:
-		g_error.error(fmt.Sprintf("无效索引值[%v]", begin))
+		gError.error(fmt.Sprintf("无效索引值[%v]", begin))
 	}
 
 	switch v := end.(type) {
@@ -88,7 +88,7 @@ func (l *List) slice(begin, end AstNode) AstNode {
 	case *Empty:
 		e = int64(len(l.vals))
 	default:
-		g_error.error(fmt.Sprintf("无效索引值[%v]", end))
+		gError.error(fmt.Sprintf("无效索引值[%v]", end))
 	}
 
 	return NewList(l.token, l.vals[b:e])

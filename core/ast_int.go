@@ -16,23 +16,23 @@ func NewInteger(token *Token) *Integer {
 	if token.valueType == INT {
 		v, err := strconv.Atoi(token.value)
 		if err != nil {
-			g_error.error(fmt.Sprintf("无效十进制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
+			gError.error(fmt.Sprintf("无效十进制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
 		}
 		num.value = int64(v)
 	} else if token.valueType == HEX_INT {
 		v, err := strconv.ParseInt(token.value[2:], 16, 64)
 		if err != nil {
-			g_error.error(fmt.Sprintf("无效十六进制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
+			gError.error(fmt.Sprintf("无效十六进制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
 		}
 		num.value = v
 	} else if token.valueType == OCT_INT {
 		v, err := strconv.ParseInt(token.value, 8, 64)
 		if err != nil {
-			g_error.error(fmt.Sprintf("无效八制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
+			gError.error(fmt.Sprintf("无效八制数字：%v,%v,%d:%d", token.value, err, token.line, token.pos))
 		}
 		num.value = v
 	} else {
-		g_error.error(fmt.Sprintf("无效整数类型：%v, %d:%d", token.value, token.line, token.pos))
+		gError.error(fmt.Sprintf("无效整数类型：%v, %d:%d", token.value, token.line, token.pos))
 	}
 	num.v = num
 	return num
@@ -51,7 +51,7 @@ func (n *Integer) clone() AstNode {
 }
 
 func (n *Integer) String() string {
-	if g_is_debug {
+	if gIsDebug {
 		return fmt.Sprintf("({type=%v}, {value=%d})", n.token.valueType, n.value)
 	}
 	return fmt.Sprintf("%d", n.value)
@@ -74,7 +74,7 @@ func (n *Integer) add(ast AstNode) AstNode {
 	case *Double:
 		return &Double{value: float64(n.value) + val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
 	}
 	return nil
 }
@@ -86,7 +86,7 @@ func (n *Integer) minus(ast AstNode) AstNode {
 	case *Double:
 		return &Double{value: float64(n.value) - val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v-%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v-%v", n.token, ast))
 	}
 	return nil
 }
@@ -98,7 +98,7 @@ func (n *Integer) multi(ast AstNode) AstNode {
 	case *Double:
 		return &Double{value: float64(n.value) * val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v*%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v*%v", n.token, ast))
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func (n *Integer) div(ast AstNode) AstNode {
 	case *Integer:
 		return &Integer{value: n.value / val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v/%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v/%v", n.token, ast))
 	}
 	return nil
 }
@@ -118,7 +118,7 @@ func (n *Integer) mod(ast AstNode) AstNode {
 	case *Integer:
 		return &Integer{value: n.value % val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v %% %v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v %% %v", n.token, ast))
 	}
 	return nil
 }
@@ -130,7 +130,7 @@ func (n *Integer) great(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: float64(n.value) > val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
 	}
 	return nil
 }
@@ -142,7 +142,7 @@ func (n *Integer) less(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: float64(n.value) < val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
 	}
 	return nil
 }
@@ -154,7 +154,7 @@ func (n *Integer) geq(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: float64(n.value) >= val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
 	}
 	return nil
 }
@@ -166,7 +166,7 @@ func (n *Integer) leq(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: float64(n.value) <= val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
 	}
 	return nil
 }
@@ -178,7 +178,7 @@ func (n *Integer) equal(ast AstNode) AstNode {
 	case *Double:
 		return &Boolean{value: float64(n.value) == val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
 	return nil
 }
@@ -200,7 +200,7 @@ func (n *Integer) bitor(ast AstNode) AstNode {
 	case *Integer:
 		return &Integer{value: n.value | val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v|%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v|%v", n.token, ast))
 	}
 	return nil
 }
@@ -210,7 +210,7 @@ func (n *Integer) xor(ast AstNode) AstNode {
 	case *Integer:
 		return &Integer{value: n.value ^ val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v^%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v^%v", n.token, ast))
 	}
 	return nil
 }
@@ -220,7 +220,7 @@ func (n *Integer) bitand(ast AstNode) AstNode {
 	case *Integer:
 		return &Integer{value: n.value & val.value}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v&%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v&%v", n.token, ast))
 	}
 	return nil
 }
@@ -230,7 +230,7 @@ func (n *Integer) lshift(ast AstNode) AstNode {
 	case *Integer:
 		return &Integer{value: n.value << uint64(val.value)}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v<<%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v<<%v", n.token, ast))
 	}
 	return nil
 }
@@ -240,7 +240,7 @@ func (n *Integer) rshift(ast AstNode) AstNode {
 	case *Integer:
 		return &Integer{value: n.value >> uint64(val.value)}
 	default:
-		g_error.error(fmt.Sprintf("不支持%v>>%v", n.token, ast))
+		gError.error(fmt.Sprintf("不支持%v>>%v", n.token, ast))
 	}
 	return nil
 }

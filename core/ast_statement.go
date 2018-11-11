@@ -124,7 +124,7 @@ func (a *BreakStatement) statement()          {}
 func (a *ContinueStatement) statement()       {}
 func (a *ForStatement) statement()            {}
 
-func (a *AssignStatement) variable_visit(l *Variable, r AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
+func (a *AssignStatement) variableVisit(l *Variable, r AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
 	if l.name != "_" {
 		var ival AstNode
 		/* 等号右边求值 */
@@ -174,7 +174,7 @@ func (a *AssignStatement) variable_visit(l *Variable, r AstNode, op TokenType, s
 	return nil, nil
 }
 
-func (a *AssignStatement) tuple_visit(l *Tuple, right AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
+func (a *AssignStatement) tupleVisit(l *Tuple, right AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
 	if op != ASSIGN {
 		return nil, fmt.Errorf("非法操作符[%v],位置[%v:%v:%v]", a.operator.valueType,
 			a.operator.file, a.operator.line, a.operator.pos)
@@ -187,28 +187,28 @@ func (a *AssignStatement) tuple_visit(l *Tuple, right AstNode, op TokenType, sco
 
 	if r, ok := _r.(*Tuple); ok {
 		if len(r.vals) != len(l.vals) {
-			g_error.error(fmt.Sprintf("左变量个数[%v],右值个数[%v]不相同,位置[%v:%v:%v]",
+			gError.error(fmt.Sprintf("左变量个数[%v],右值个数[%v]不相同,位置[%v:%v:%v]",
 				len(l.vals), len(r.vals), a.operator.file, a.operator.line, a.operator.pos))
 		}
 		for i := 0; i < len(l.vals); i++ {
-			if _, err := a.base_visit(l.vals[i], r.vals[i], op, scope); err != nil {
+			if _, err := a.baseVisit(l.vals[i], r.vals[i], op, scope); err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		g_error.error(fmt.Sprintf("无效赋值语句,位置[%v:%v:%v]",
+		gError.error(fmt.Sprintf("无效赋值语句,位置[%v:%v:%v]",
 			a.operator.file, a.operator.line, a.operator.pos))
 	}
 
 	return nil, nil
 }
 
-func (a *AssignStatement) base_visit(left, right AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
+func (a *AssignStatement) baseVisit(left, right AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
 	switch l := left.(type) {
 	case *Variable: // 赋值第2类情况
-		return a.variable_visit(l, right, op, scope)
+		return a.variableVisit(l, right, op, scope)
 	case *Tuple: // 赋值第1,3类情况
-		return a.tuple_visit(l, right, op, scope)
+		return a.tupleVisit(l, right, op, scope)
 	case *AccessOperator:
 		_val, err := l.left.visit(scope)
 		if err != nil {
@@ -261,24 +261,24 @@ func (a *AssignStatement) base_visit(left, right AstNode, op TokenType, scope *S
 
 		switch cls := _cls.(type) {
 		case *ClassObj:
-			cls_name := l.left.getName()
-			mem_name := l.right.getName()
+			clsName := l.left.getName()
+			memName := l.right.getName()
 
-			if mem_name[0] == '_' && cls_name != "this" {
-				return nil, fmt.Errorf("未在对象[%v]找到成员变量[%v]", cls_name, mem_name)
+			if memName[0] == '_' && clsName != "this" {
+				return nil, fmt.Errorf("未在对象[%v]找到成员变量[%v]", clsName, memName)
 			}
-			if rv, err := right.visit(scope); err != nil {
-
+			rv, err := right.visit(scope)
+			if err != nil {
 				return nil, err
-			} else {
-
-				inScope.set(mem_name, rv)
 			}
+
+			inScope.set(memName, rv)
+
 			return nil, nil
 		case *Class:
 
-			mem_name := l.right.getName()
-			return nil, fmt.Errorf("未在类[%v]找到成员变量[%v]", cls.name, mem_name)
+			memName := l.right.getName()
+			return nil, fmt.Errorf("未在类[%v]找到成员变量[%v]", cls.name, memName)
 		}
 		return nil, fmt.Errorf("无效运算%v.%v,位置[%v:%v:%v]",
 			l.left, l.right, l.token.file, l.token.line, l.token.pos)
@@ -290,7 +290,7 @@ func (a *AssignStatement) base_visit(left, right AstNode, op TokenType, scope *S
 
 func (a *AssignStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 
-	return a.base_visit(a.left, a.right, a.operator.valueType, scope)
+	return a.baseVisit(a.left, a.right, a.operator.valueType, scope)
 }
 
 func (c *ContinueStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
@@ -322,9 +322,9 @@ func (r *ReturnStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return NewTuple(r.token, nodes), nil
 }
 func (i *IfStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
-	g_statement_stack.push("if")
+	gStatementStack.push("if")
 	defer func() {
-		g_statement_stack.pop()
+		gStatementStack.pop()
 	}()
 	//初始化赋值
 	if i.init != nil {
@@ -345,39 +345,40 @@ func (i *IfStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 
 	if bl.value { // 第一个if
 		return i.body.visit(scope)
-	} else { // 其他elif 或 else
-		for j := 0; j < len(i.elif); j++ {
-			v := i.elif[j]
-			if v.init != nil {
-				_, err := v.init.visit(scope)
-				if err != nil {
-					return nil, err
-				}
-			}
-			vv, err := v.epxr.rvalue()
+	}
+	// 其他elif 或 else
+	for j := 0; j < len(i.elif); j++ {
+		v := i.elif[j]
+		if v.init != nil {
+			_, err := v.init.visit(scope)
 			if err != nil {
 				return nil, err
 			}
-			bl, ok := vv.(*Boolean)
-			if !ok {
-				return nil, fmt.Errorf("无效表达式:%v", vv)
-			}
+		}
+		vv, err := v.epxr.rvalue()
+		if err != nil {
+			return nil, err
+		}
+		bl, ok := vv.(*Boolean)
+		if !ok {
+			return nil, fmt.Errorf("无效表达式:%v", vv)
+		}
 
-			if bl.value {
-				return v.body.visit(scope)
-			}
+		if bl.value {
+			return v.body.visit(scope)
 		}
 	}
+
 	return nil, nil
 }
 
-func (f *ForeachStatement) visit_list(scope *ScopedSymbolTable) (AstNode, error) {
+func (f *ForeachStatement) visitList(scope *ScopedSymbolTable) (AstNode, error) {
 	iFunc := f.expr.(*FuncCallOperator)
 	var iStart, iStop int64
 	iTotal := len(iFunc.params)
 
 	if iTotal == 0 || iTotal > 2 {
-		g_error.error(fmt.Sprintf("需要参数个数[2]传入参数个数[%v]", iTotal))
+		gError.error(fmt.Sprintf("需要参数个数[2]传入参数个数[%v]", iTotal))
 	} else {
 		ret, err := iFunc.params[0].visit(scope)
 		if err != nil {
@@ -386,7 +387,7 @@ func (f *ForeachStatement) visit_list(scope *ScopedSymbolTable) (AstNode, error)
 		if v, ok := ret.(*Integer); ok {
 			iStop = v.value
 		} else {
-			g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[0]))
+			gError.error(fmt.Sprintf("无效数值%v", iFunc.params[0]))
 		}
 		if iTotal == 2 {
 			iStart = iStop
@@ -397,7 +398,7 @@ func (f *ForeachStatement) visit_list(scope *ScopedSymbolTable) (AstNode, error)
 			if v, ok := ret.(*Integer); ok {
 				iStop = v.value
 			} else {
-				g_error.error(fmt.Sprintf("无效数值%v", iFunc.params[1]))
+				gError.error(fmt.Sprintf("无效数值%v", iFunc.params[1]))
 			}
 		}
 	}
@@ -433,15 +434,15 @@ FOREACH_STATEMENT_LOOP1:
 func (f *ForeachStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	var ret AstNode
 	var oerr error
-	g_statement_stack.push("for")
+	gStatementStack.push("for")
 	defer func() {
-		g_statement_stack.pop()
+		gStatementStack.pop()
 	}()
 	var keys, values []AstNode
 
 	if _f, ok := f.expr.(*FuncCallOperator); ok {
 		if _f.getName() == "list" {
-			return f.visit_list(scope)
+			return f.visitList(scope)
 		}
 	}
 	_expr, err := f.expr.rvalue()
@@ -481,9 +482,9 @@ FOREACH_STATEMENT_LOOP:
 func (f *ForStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	var ret AstNode
 	var oerr error
-	g_statement_stack.push("for")
+	gStatementStack.push("for")
 	defer func() {
-		g_statement_stack.pop()
+		gStatementStack.pop()
 	}()
 
 	if f.condition[0] != nil { //初始化
@@ -499,15 +500,15 @@ FORSTATEMENT_LOOP:
 		if err != nil {
 			return nil, err
 		}
-		if v, ok := cnd.(*Boolean); !ok {
+		v, ok := cnd.(*Boolean)
+		if !ok {
 			return nil, fmt.Errorf("非布尔表达式, 位置[%v:%v:%v]",
 				f.token.file,
 				f.token.line,
 				f.token.pos)
-		} else {
-			if !v.value {
-				break
-			}
+		}
+		if !v.value {
+			break
 		}
 
 		ret, oerr = f.body.visit(scope)
@@ -540,12 +541,12 @@ func (p *LocalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, error
 		switch p.nodes[i].(type) {
 		case *ReturnStatement:
 			isFound := false
-			for !g_statement_stack.isEmpty() {
-				if g_statement_stack.value() == "func" {
+			for !gStatementStack.isEmpty() {
+				if gStatementStack.value() == "func" {
 					isFound = true
 					break
 				}
-				g_statement_stack.pop()
+				gStatementStack.pop()
 			}
 			if !isFound {
 				return nil, fmt.Errorf("return不能再函数外")
@@ -553,12 +554,12 @@ func (p *LocalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, error
 			return p.nodes[i], nil
 		case *BreakStatement:
 			isFound := false
-			for !g_statement_stack.isEmpty() {
-				if g_statement_stack.value() == "for" {
+			for !gStatementStack.isEmpty() {
+				if gStatementStack.value() == "for" {
 					isFound = true
 					break
 				}
-				g_statement_stack.pop()
+				gStatementStack.pop()
 			}
 			if !isFound {
 				return nil, fmt.Errorf("break不能再循环外")
@@ -566,12 +567,12 @@ func (p *LocalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, error
 			return p.nodes[i], nil
 		case *ContinueStatement:
 			isFound := false
-			for !g_statement_stack.isEmpty() {
-				if g_statement_stack.value() == "for" {
+			for !gStatementStack.isEmpty() {
+				if gStatementStack.value() == "for" {
 					isFound = true
 					break
 				}
-				g_statement_stack.pop()
+				gStatementStack.pop()
 			}
 			if !isFound {
 				return nil, fmt.Errorf("continue不能再循环外")
