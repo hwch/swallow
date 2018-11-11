@@ -6,8 +6,9 @@ import (
 
 type Tuple struct {
 	Ast
-	token *Token
-	vals  []AstNode
+	token  *Token
+	isInit bool
+	vals   []AstNode
 }
 
 func NewTuple(token *Token, vals []AstNode) *Tuple {
@@ -16,28 +17,29 @@ func NewTuple(token *Token, vals []AstNode) *Tuple {
 	return l
 }
 
-func (l *Tuple) isPrint() bool {
-	return true
+func (t *Tuple) visit(scope *ScopedSymbolTable) (AstNode, error) {
+	if !t.isInit {
+		var err error
+		for i := 0; i < len(t.vals); i++ {
+			t.vals[i], err = t.vals[i].visit(scope)
+			if err != nil {
+				return nil, err
+			}
+		}
+		t.isInit = true
+	}
+	return t, nil
 }
 
-func (l *Tuple) Type() AstType {
-	return AST_TUPLE
-}
-
-func (l *Tuple) visit() (AstNode, error) {
-
-	return l, nil
-}
-
-func (l *Tuple) String() string {
+func (t *Tuple) String() string {
 	s := ""
 	if g_is_debug {
 		s = fmt.Sprintf("Tuple(")
-		for i := 0; i < len(l.vals); i++ {
+		for i := 0; i < len(t.vals); i++ {
 
-			s += fmt.Sprintf("%v, ", l.vals[i])
+			s += fmt.Sprintf("%v, ", t.vals[i])
 		}
-		if len(l.vals) <= 0 {
+		if len(t.vals) <= 0 {
 			s += ")"
 		} else {
 			s = s[:len(s)-2] + ")"
@@ -45,14 +47,11 @@ func (l *Tuple) String() string {
 
 	} else {
 		s = "("
-		for i := 0; i < len(l.vals); i++ {
-			v, err := l.vals[i].visit()
-			if err != nil {
-				g_error.error(fmt.Sprintf("列表无效值[%v]", l.vals[i]))
-			}
-			s += fmt.Sprintf("%v, ", v)
+		for i := 0; i < len(t.vals); i++ {
+
+			s += fmt.Sprintf("%v, ", t.vals[i])
 		}
-		if len(l.vals) <= 0 {
+		if len(t.vals) <= 0 {
 			s += ")"
 		} else {
 			s = s[:len(s)-2] + ")"
@@ -62,15 +61,15 @@ func (l *Tuple) String() string {
 	return s
 }
 
-func (l *Tuple) index(ast AstNode) AstNode {
+func (t *Tuple) index(ast AstNode) AstNode {
 	idx, ok := ast.(*Integer)
 	if !ok {
 		g_error.error(fmt.Sprintf("无效索引值[%v]", ast))
 	}
-	return l.vals[idx.value]
+	return t.vals[idx.value]
 }
 
-func (l *Tuple) slice(begin, end AstNode) AstNode {
+func (t *Tuple) slice(begin, end AstNode) AstNode {
 	var b, e int64
 	switch v := begin.(type) {
 	case *Integer:
@@ -85,34 +84,34 @@ func (l *Tuple) slice(begin, end AstNode) AstNode {
 	case *Integer:
 		e = v.value
 	case *Empty:
-		e = int64(len(l.vals))
+		e = int64(len(t.vals))
 	default:
 		g_error.error(fmt.Sprintf("无效索引值[%v]", end))
 	}
 
-	return NewTuple(l.token, l.vals[b:e])
+	return NewTuple(t.token, t.vals[b:e])
 }
 
-func (l *Tuple) keys() []AstNode {
-	iLen := len(l.vals)
+func (t *Tuple) keys() []AstNode {
+	iLen := len(t.vals)
 	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
-		v[i] = &Integer{token: l.ofToken(), value: int64(i)}
+		v[i] = &Integer{token: t.ofToken(), value: int64(i)}
 	}
 	return v
 }
 
-func (l *Tuple) values() []AstNode {
-	iLen := len(l.vals)
+func (t *Tuple) values() []AstNode {
+	iLen := len(t.vals)
 
 	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
-		v[i] = l.vals[i]
+		v[i] = t.vals[i]
 
 	}
 	return v
 }
 
-func (l *Tuple) ofToken() *Token {
-	return l.token
+func (t *Tuple) ofToken() *Token {
+	return t.token
 }

@@ -171,16 +171,45 @@ func (l *Lexer) peek() uint8 {
 }
 
 func (l *Lexer) getChar() *Token {
-	save_pos := l.save_pos
 	line := l.line
-	for ; l.cur_pos < len(l.text); l.cur_pos++ {
+	l.cur_pos++ //略过符号 第一个"
+	for l.cur_pos < len(l.text) {
+		if l.text[l.cur_pos] == '\n' || l.text[l.cur_pos] == '\r' {
+			l.cur_pos++
+			l.nextLine()
+			continue
+		}
 		if l.text[l.cur_pos] == '\'' && l.text[l.cur_pos-1] != '\\' {
 			break
 		}
+		l.cur_pos++
 	}
-	l.cur_pos++ //跳过 '
+	l.cur_pos++ //略过符号 "
+	save_pos := l.save_pos
+	l.save_pos = l.cur_pos
+	dvalue := l.text[save_pos:l.cur_pos]
+	return NewToken(STRING, dvalue, line, save_pos, l.file)
+}
 
-	return NewToken(STRING, l.text[save_pos:l.cur_pos], line, save_pos, l.file)
+func (l *Lexer) getString() *Token {
+	line := l.line
+	l.cur_pos++ //略过符号 第一个"
+	for l.cur_pos < len(l.text) {
+		if l.text[l.cur_pos] == '\n' || l.text[l.cur_pos] == '\r' {
+			l.cur_pos++
+			l.nextLine()
+			continue
+		}
+		if l.text[l.cur_pos] == '"' && l.text[l.cur_pos-1] != '\\' {
+			break
+		}
+		l.cur_pos++
+	}
+	l.cur_pos++ //略过符号 "
+	save_pos := l.save_pos
+	l.save_pos = l.cur_pos
+	dvalue := l.text[save_pos:l.cur_pos]
+	return NewToken(STRING, dvalue, line, save_pos, l.file)
 }
 
 func (l *Lexer) getSymbolToken() *Token {
@@ -366,27 +395,6 @@ func (l *Lexer) getSymbolToken() *Token {
 	}
 
 	return nil
-}
-
-func (l *Lexer) getString() *Token {
-	line := l.line
-	l.cur_pos++ //略过符号 第一个"
-	for l.cur_pos < len(l.text) {
-		if l.text[l.cur_pos] == '\n' || l.text[l.cur_pos] == '\r' {
-			l.cur_pos++
-			l.nextLine()
-			continue
-		}
-		if l.text[l.cur_pos] == '"' && l.text[l.cur_pos-1] != '\\' {
-			break
-		}
-		l.cur_pos++
-	}
-	l.cur_pos++ //略过符号 "
-	save_pos := l.save_pos
-	l.save_pos = l.cur_pos
-	dvalue := l.text[save_pos:l.cur_pos]
-	return NewToken(STRING, dvalue, line, save_pos, l.file)
 }
 
 func (l *Lexer) judgeType(dvalue string) TokenType {

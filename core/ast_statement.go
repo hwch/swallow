@@ -15,20 +15,17 @@ type AssignStatement struct {
 	Ast
 	operator    *Token
 	left, right AstNode
-	scope       *ScopedSymbolTable
 }
 
 type GlobalCompoundStatement struct {
 	Ast
 	token *Token
-	scope *ScopedSymbolTable
 	nodes []AstNode
 }
 
 type ForStatement struct {
 	Ast
 	token     *Token
-	scope     *ScopedSymbolTable
 	condition [3]AstNode
 	body      *LocalCompoundStatement
 }
@@ -36,7 +33,6 @@ type ForStatement struct {
 type IfStatement struct {
 	Ast
 	token *Token
-	scope *ScopedSymbolTable
 	init  AstNode
 	epxr  AstNode
 	body  AstNode
@@ -46,7 +42,6 @@ type IfStatement struct {
 type ForeachStatement struct {
 	Ast
 	token         *Token
-	scope         *ScopedSymbolTable
 	first, second *Variable
 	expr          AstNode
 	nodes         *LocalCompoundStatement
@@ -55,43 +50,40 @@ type ForeachStatement struct {
 type BreakStatement struct {
 	Ast
 	token *Token
-	scope *ScopedSymbolTable
 }
 
 type ContinueStatement struct {
 	Ast
 	token *Token
-	scope *ScopedSymbolTable
 }
 
 type LocalCompoundStatement struct {
 	Ast
 	token *Token
-	scope *ScopedSymbolTable
 	nodes []AstNode
 }
 
-func NewForStatement(token *Token, condition [3]AstNode, body *LocalCompoundStatement, scope *ScopedSymbolTable) *ForStatement {
-	fs := &ForStatement{token: token, condition: condition, body: body, scope: scope}
+func NewForStatement(token *Token, condition [3]AstNode, body *LocalCompoundStatement) *ForStatement {
+	fs := &ForStatement{token: token, condition: condition, body: body}
 	fs.v = fs
 
 	return fs
 }
 
-func NewForeachStatement(token *Token, a, b *Variable, expr AstNode, nodes *LocalCompoundStatement, scope *ScopedSymbolTable) *ForeachStatement {
-	f := &ForeachStatement{token: token, first: a, second: b, expr: expr, nodes: nodes, scope: scope}
+func NewForeachStatement(token *Token, a, b *Variable, expr AstNode, nodes *LocalCompoundStatement) *ForeachStatement {
+	f := &ForeachStatement{token: token, first: a, second: b, expr: expr, nodes: nodes}
 	f.v = f
 	return f
 }
 
-func NewBreakStatement(token *Token, scope *ScopedSymbolTable) *BreakStatement {
-	b := &BreakStatement{token: token, scope: scope}
+func NewBreakStatement(token *Token) *BreakStatement {
+	b := &BreakStatement{token: token}
 	b.v = b
 	return b
 }
 
-func NewContinueStatement(token *Token, scope *ScopedSymbolTable) *ContinueStatement {
-	c := &ContinueStatement{token: token, scope: scope}
+func NewContinueStatement(token *Token) *ContinueStatement {
+	c := &ContinueStatement{token: token}
 	c.v = c
 	return c
 }
@@ -99,26 +91,26 @@ func NewReturnStatement(token *Token, res []AstNode) *ReturnStatement {
 	return &ReturnStatement{results: res, token: token}
 }
 
-func NewAssignStatement(left AstNode, oper *Token, right AstNode, scope *ScopedSymbolTable) *AssignStatement {
-	ass := &AssignStatement{left: left, right: right, operator: oper, scope: scope}
+func NewAssignStatement(left AstNode, oper *Token, right AstNode) *AssignStatement {
+	ass := &AssignStatement{left: left, right: right, operator: oper}
 	ass.v = ass
 	return ass
 }
 
-func NewGlobalCompoundStatement(token *Token, nodes []AstNode, scope *ScopedSymbolTable) *GlobalCompoundStatement {
-	cmp := &GlobalCompoundStatement{nodes: nodes, scope: scope, token: token}
+func NewGlobalCompoundStatement(token *Token, nodes []AstNode) *GlobalCompoundStatement {
+	cmp := &GlobalCompoundStatement{nodes: nodes, token: token}
 	cmp.v = cmp
 	return cmp
 }
 
-func NewLocalCompoundStatement(token *Token, nodes []AstNode, scope *ScopedSymbolTable) *LocalCompoundStatement {
-	cmp := &LocalCompoundStatement{nodes: nodes, scope: scope, token: token}
+func NewLocalCompoundStatement(token *Token, nodes []AstNode) *LocalCompoundStatement {
+	cmp := &LocalCompoundStatement{nodes: nodes, token: token}
 	cmp.v = cmp
 	return cmp
 }
 
-func NewIfStatement(token *Token, init, expr, body AstNode, elif []*IfStatement, scope *ScopedSymbolTable) *IfStatement {
-	ifStmt := &IfStatement{init: init, epxr: expr, body: body, elif: elif, scope: scope, token: token}
+func NewIfStatement(token *Token, init, expr, body AstNode, elif []*IfStatement) *IfStatement {
+	ifStmt := &IfStatement{init: init, epxr: expr, body: body, elif: elif, token: token}
 	ifStmt.v = ifStmt
 	return ifStmt
 }
@@ -133,34 +125,24 @@ func (a *BreakStatement) statement()          {}
 func (a *ContinueStatement) statement()       {}
 func (a *ForStatement) statement()            {}
 
-func (a *AssignStatement) Type() AstType         { return AST_ASSIGN }
-func (a *GlobalCompoundStatement) Type() AstType { return AST_STATEMENT }
-func (a *LocalCompoundStatement) Type() AstType  { return AST_STATEMENT }
-func (a *IfStatement) Type() AstType             { return AST_IF }
-func (a *ReturnStatement) Type() AstType         { return AST_RETURN }
-func (a *ForeachStatement) Type() AstType        { return AST_FOREACH }
-func (a *BreakStatement) Type() AstType          { return AST_BREAK }
-func (a *ContinueStatement) Type() AstType       { return AST_CONTINUE }
-func (a *ForStatement) Type() AstType            { return AST_FOR }
-
-func (a *AssignStatement) variable_visit(l *Variable, r AstNode) (AstNode, error) {
+func (a *AssignStatement) variable_visit(l *Variable, r AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
 	if l.name != "_" {
 		var ival AstNode
 		/* 等号右边求值 */
-		v, err := r.visit()
+		v, err := r.visit(scope)
 		if err != nil {
 			return nil, err
 		}
-		if a.operator.valueType == ASSIGN {
+		if op == ASSIGN {
 			ival = v //赋值
 		} else {
 			/* 等号左边求值 */
-			ll, err := l.visit()
+			ll, err := l.rvalue()
 			if err != nil {
 				return nil, err
 			}
 
-			switch a.operator.valueType { //赋值
+			switch op { //赋值
 			case PLUS_EQ:
 				ival = ll.add(v)
 			case MINUS_EQ:
@@ -186,217 +168,174 @@ func (a *AssignStatement) variable_visit(l *Variable, r AstNode) (AstNode, error
 		case *Double:
 			ival = ival.clone()
 		}
-		// switch ival.Type() {
-		// case AST_INT:
-		// 	fallthrough
-		// case AST_BOOL:
-		// 	fallthrough
-		// case AST_STRING:
-		// 	fallthrough
-		// case AST_DOUBLE:
-		// 	ival = ival.clone()
-		// }
-		a.scope.set(l.name, ival)
+
+		scope.set(l.name, ival)
 	}
 
 	return nil, nil
 }
 
-func (a *AssignStatement) tuple_visit(l *Tuple) (AstNode, error) {
-	if a.operator.valueType != ASSIGN {
+func (a *AssignStatement) tuple_visit(l *Tuple, right AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
+	if op != ASSIGN {
 		return nil, fmt.Errorf("非法操作符[%v],位置[%v:%v:%v]", a.operator.valueType,
 			a.operator.file, a.operator.line, a.operator.pos)
 	}
-	var myVar *Variable
-	switch a.right.Type() {
-	case AST_TUPLE: // 赋值第3类情况
-		r := a.right.(*Tuple)
+
+	_r, err := right.visit(scope)
+	if err != nil {
+		return nil, err
+	}
+
+	if r, ok := _r.(*Tuple); ok {
 		if len(r.vals) != len(l.vals) {
 			g_error.error(fmt.Sprintf("左变量个数[%v],右值个数[%v]不相同,位置[%v:%v:%v]",
 				len(l.vals), len(r.vals), a.operator.file, a.operator.line, a.operator.pos))
 		}
 		for i := 0; i < len(l.vals); i++ {
-			if v, ok := l.vals[i].(*Variable); ok {
-				myVar = v
-			} else {
-				_ll, err := l.vals[i].visit()
-				if err != nil {
-					return nil, err
-				}
-
-				ll, ok := _ll.(*Variable)
-				if !ok {
-					return nil, fmt.Errorf("左参必须为可赋值变量,位置[%v:%v:%v]",
-						l.vals[i].ofToken().file, l.vals[i].ofToken().line, l.vals[i].ofToken().pos)
-				}
-				myVar = ll
-			}
-			if _, err := a.variable_visit(myVar, r.vals[i]); err != nil {
+			if _, err := a.base_visit(l.vals[i], r.vals[i], op, scope); err != nil {
 				return nil, err
 			}
 		}
-	case AST_FUNC_CALL: // 赋值第3类情况
-
-		_ret, err := a.right.visit()
-		if err != nil {
-			return nil, err
-		}
-		rt := _ret.(*Result)
-		if len(rt.result) != len(l.vals) {
-			g_error.error(fmt.Sprintf("左变量个数[%v],右值个数[%v]不相同,位置[%v:%v:%v]",
-				len(l.vals), len(rt.result), a.operator.file, a.operator.line, a.operator.pos))
-		}
-		for i := 0; i < len(l.vals); i++ {
-			myVar = nil
-			if v, ok := l.vals[i].(*Variable); ok {
-				myVar = v
-			} else {
-				_ll, err := l.vals[i].visit()
-				if err != nil {
-					return nil, err
-				}
-				ll, ok := _ll.(*Variable)
-				if !ok {
-					return nil, fmt.Errorf("左参必须为可赋值变量,位置[%v:%v:%v]",
-						l.vals[i].ofToken().file, l.vals[i].ofToken().line, l.vals[i].ofToken().pos)
-				}
-				myVar = ll
-			}
-			if _, err := a.variable_visit(myVar, rt.result[i]); err != nil {
-				return nil, err
-			}
-		}
-	default:
+	} else {
 		g_error.error(fmt.Sprintf("无效赋值语句,位置[%v:%v:%v]",
-			a.right.ofToken().file, a.right.ofToken().line, a.right.ofToken().pos))
+			a.operator.file, a.operator.line, a.operator.pos))
 	}
 
 	return nil, nil
 }
 
-func (a *AssignStatement) visit() (AstNode, error) {
-	// 赋值分3类情况
-	// 1. tuple=tuple
-	// 2. variable=tuple
-	// 3. tuple=func
-
-	var myVar *Variable
-	var right AstNode
-
-	switch l := a.left.(type) {
+func (a *AssignStatement) base_visit(left, right AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
+	switch l := left.(type) {
 	case *Variable: // 赋值第2类情况
-		myVar = l
-		right = a.right
+		return a.variable_visit(l, right, a.operator.valueType, scope)
 	case *Tuple: // 赋值第1,3类情况
-		return a.tuple_visit(l)
-	case *BinOperator: // 赋值第2类情况
-		if l.operator.valueType == QUOTE { // 成员引用
-			_cls, err := l.left.visit()
+		return a.tuple_visit(l, right, op, scope)
+	case *AccessOperator:
+		_val, err := l.left.visit(scope)
+		if err != nil {
+			return nil, err
+		}
+		switch val := _val.(type) {
+		case *String:
+			return nil, fmt.Errorf("字符串不可赋值,位置[%v:%v:%v]",
+				val.token.file, val.token.line, val.token.pos)
+		case *Tuple:
+			return nil, fmt.Errorf("元组不可赋值,位置[%v:%v:%v]",
+				val.token.file, val.token.line, val.token.pos)
+		case *List:
+			_idx, err := l.right.visit(scope)
 			if err != nil {
 				return nil, err
 			}
-			cls, ok := _cls.(*Class)
+			idx, ok := _idx.(*Integer)
 			if !ok {
-				return nil, fmt.Errorf("无效运算%v.%v,位置[%v:%v:%v]",
-					l.left, l.right, l.operator.file, l.operator.line, l.operator.pos)
-			} else {
-				cls_name := l.left.getName()
-				mem_name := l.right.getName()
-				if mem_name[0] == '_' && cls_name != "this" {
-					return nil, fmt.Errorf("未在类[%v]找到成员变量[%v]", cls.name, mem_name)
-				}
+				return nil, fmt.Errorf("索引为非整数,位置[%v:%v:%v]",
+					val.token.file, val.token.line, val.token.pos)
 			}
-			if rv, err := a.right.visit(); err != nil {
-				return nil, err
-			} else {
-				cls.scope.set(fmt.Sprintf("%v", l.right), rv)
-			}
-
-		} else if l.operator.valueType == LBRK {
-			_val, err := l.left.visit()
+			val.vals[idx.value], err = right.visit(scope)
 			if err != nil {
 				return nil, err
 			}
 
-			switch val := _val.(type) {
-			case *String:
-				return nil, fmt.Errorf("字符串不可赋值,位置[%v:%v:%v]",
-					l.operator.file, l.operator.line, l.operator.pos)
-			case *Tuple:
-				return nil, fmt.Errorf("元组不可赋值,位置[%v:%v:%v]",
-					l.operator.file, l.operator.line, l.operator.pos)
-			case *List:
-				_idx, err := l.right.visit()
-				if err != nil {
-					return nil, err
-				}
-				idx, ok := _idx.(*Integer)
-				if !ok {
-					return nil, fmt.Errorf("索引为非整数,位置[%v:%v:%v]",
-						l.operator.file, l.operator.line, l.operator.pos)
-				}
-				val.vals[idx.value] = a.right
-
-			case *Dict:
-				_idx, err := l.right.visit()
-				if err != nil {
-					return nil, err
-				}
-				idx := fmt.Sprintf("%v", _idx)
-				val.vals[idx] = a.right
-
-			default:
-				return nil, fmt.Errorf("无效运算%v[%v],位置[%v:%v:%v]",
-					l.left, l.right, l.operator.file, l.operator.line, l.operator.pos)
+		case *Dict:
+			_idx, err := l.right.visit(scope)
+			if err != nil {
+				return nil, err
+			}
+			idx := fmt.Sprintf("%v", _idx)
+			val.vals[idx], err = right.visit(scope)
+			if err != nil {
+				return nil, err
 			}
 
-		} else {
-			return nil, fmt.Errorf("左参必须为可赋值变量,位置[%v:%v:%v]",
-				l.operator.file, l.operator.line, l.operator.pos)
+		default:
+			return nil, fmt.Errorf("无效运算%v[%v],位置[%v:%v:%v]",
+				l.left, l.right, l.token.file, l.token.line, l.token.pos)
 		}
 		return nil, nil
-	default:
-		return nil, fmt.Errorf("左参必须为可赋值变量,位置[%v:%v:%v]",
-			a.left.ofToken().file, a.left.ofToken().line, a.left.ofToken().pos)
-	}
-	return a.variable_visit(myVar, right)
+	case *AttributeOperator: // 赋值第2类情况
+		inScope, _ := l.getScope(scope)
+		_cls, err := l.left.visit(scope)
+		if err != nil {
+			return nil, err
+		}
 
+		switch cls := _cls.(type) {
+		case *ClassObj:
+			cls_name := l.left.getName()
+			mem_name := l.right.getName()
+
+			if mem_name[0] == '_' && cls_name != "this" {
+				return nil, fmt.Errorf("未在对象[%v]找到成员变量[%v]", cls_name, mem_name)
+			}
+			if rv, err := right.visit(scope); err != nil {
+
+				return nil, err
+			} else {
+
+				inScope.set(mem_name, rv)
+			}
+			return nil, nil
+		case *Class:
+
+			mem_name := l.right.getName()
+			return nil, fmt.Errorf("未在类[%v]找到成员变量[%v]", cls.name, mem_name)
+		}
+		return nil, fmt.Errorf("无效运算%v.%v,位置[%v:%v:%v]",
+			l.left, l.right, l.token.file, l.token.line, l.token.pos)
+	}
+
+	return nil, fmt.Errorf("左参必须为可赋值变量,位置[%v:%v:%v]",
+		a.operator.file, a.operator.line, a.operator.pos)
 }
 
-func (c *ContinueStatement) visit() (AstNode, error) {
+func (a *AssignStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
+
+	return a.base_visit(a.left, a.right, a.operator.valueType, scope)
+}
+
+func (c *ContinueStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return c, nil
 }
 
-func (b *BreakStatement) visit() (AstNode, error) {
+func (b *BreakStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return b, nil
 }
 
-func (r *ReturnStatement) visit() (AstNode, error) {
+func (r *ReturnStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	iLen := len(r.results)
+
+	switch iLen {
+	case 0:
+		return &Empty{}, nil
+	case 1:
+		return r.results[0].visit(scope)
+	}
 	nodes := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
-		res, err := r.results[i].visit()
+		res, err := r.results[i].visit(scope)
 		if err != nil {
 			return nil, err
 		}
 		nodes[i] = res
 	}
-	return NewResult(r.token, nodes), nil
+
+	return NewTuple(r.token, nodes), nil
 }
-func (i *IfStatement) visit() (AstNode, error) {
+func (i *IfStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	g_statement_stack.push("if")
 	defer func() {
 		g_statement_stack.pop()
 	}()
 	//初始化赋值
 	if i.init != nil {
-		_, err := i.init.visit()
+		_, err := i.init.visit(scope)
 		if err != nil {
 			return nil, err
 		}
 	}
 	//判断表达式
-	vv, err := i.epxr.visit()
+	vv, err := i.epxr.rvalue()
 	if err != nil {
 		return nil, err
 	}
@@ -406,17 +345,17 @@ func (i *IfStatement) visit() (AstNode, error) {
 	}
 
 	if bl.value { // 第一个if
-		return i.body.visit()
+		return i.body.visit(scope)
 	} else { // 其他elif 或 else
 		for j := 0; j < len(i.elif); j++ {
 			v := i.elif[j]
 			if v.init != nil {
-				_, err := v.init.visit()
+				_, err := v.init.visit(scope)
 				if err != nil {
 					return nil, err
 				}
 			}
-			vv, err := v.epxr.visit()
+			vv, err := v.epxr.rvalue()
 			if err != nil {
 				return nil, err
 			}
@@ -426,14 +365,14 @@ func (i *IfStatement) visit() (AstNode, error) {
 			}
 
 			if bl.value {
-				return v.body.visit()
+				return v.body.visit(scope)
 			}
 		}
 	}
 	return nil, nil
 }
 
-func (f *ForeachStatement) visit_list() (AstNode, error) {
+func (f *ForeachStatement) visit_list(scope *ScopedSymbolTable) (AstNode, error) {
 	iFunc := f.expr.(*FuncCallOperator)
 	var iStart, iStop int64
 	iTotal := len(iFunc.params)
@@ -441,7 +380,7 @@ func (f *ForeachStatement) visit_list() (AstNode, error) {
 	if iTotal == 0 || iTotal > 2 {
 		g_error.error(fmt.Sprintf("需要参数个数[2]传入参数个数[%v]", iTotal))
 	} else {
-		ret, err := iFunc.params[0].visit()
+		ret, err := iFunc.params[0].visit(scope)
 		if err != nil {
 			return nil, err
 		}
@@ -452,7 +391,7 @@ func (f *ForeachStatement) visit_list() (AstNode, error) {
 		}
 		if iTotal == 2 {
 			iStart = iStop
-			ret, err := iFunc.params[1].visit()
+			ret, err := iFunc.params[1].visit(scope)
 			if err != nil {
 				return nil, err
 			}
@@ -470,13 +409,13 @@ func (f *ForeachStatement) visit_list() (AstNode, error) {
 FOREACH_STATEMENT_LOOP1:
 	for ; pos < iStop-iStart; pos++ {
 		if f.first.name != "_" {
-			f.scope.set(f.first.name, &Integer{token: f.first.token, value: pos}) //给第一个值赋值
+			scope.set(f.first.name, &Integer{token: f.first.token, value: pos}) //给第一个值赋值
 		}
 		if f.second.name != "_" {
-			f.scope.set(f.second.name, &Integer{token: f.second.token, value: iStart + pos}) //给第二个值赋值
+			scope.set(f.second.name, &Integer{token: f.second.token, value: iStart + pos}) //给第二个值赋值
 		}
 
-		ret, oerr = f.nodes.visit()
+		ret, oerr = f.nodes.visit(scope)
 		if oerr != nil {
 			return nil, oerr
 		}
@@ -485,14 +424,14 @@ FOREACH_STATEMENT_LOOP1:
 			break FOREACH_STATEMENT_LOOP1
 		case *ContinueStatement:
 			// 啥都不会做...
-		case *Result:
+		case *ReturnStatement:
 			return ret, oerr
 		}
 	}
 	return nil, nil
 }
 
-func (f *ForeachStatement) visit() (AstNode, error) {
+func (f *ForeachStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	var ret AstNode
 	var oerr error
 	g_statement_stack.push("for")
@@ -501,24 +440,16 @@ func (f *ForeachStatement) visit() (AstNode, error) {
 	}()
 	var keys, values []AstNode
 
-	if f.expr.Type() == AST_FUNC_CALL && f.expr.getName() == "list" {
-		return f.visit_list()
+	if _f, ok := f.expr.(*FuncCallOperator); ok {
+		if _f.getName() == "list" {
+			return f.visit_list(scope)
+		}
 	}
-	_expr, err := f.expr.visit()
+	_expr, err := f.expr.rvalue()
 	if err != nil {
 		return nil, err
 	}
 	switch expr := _expr.(type) {
-	case *Result:
-		if expr.num != 1 {
-			return nil, fmt.Errorf("foreach操作值[%d]个数[%d]不为1", f.expr, expr.num)
-		}
-		v, ok := expr.at(0).(Iterator)
-		if !ok {
-			return nil, fmt.Errorf("[%v]不支持foreach操作", f.expr)
-		}
-		keys = v.keys()
-		values = v.values()
 	case Iterator:
 		keys = expr.keys()
 		values = expr.values()
@@ -527,11 +458,10 @@ func (f *ForeachStatement) visit() (AstNode, error) {
 	}
 FOREACH_STATEMENT_LOOP:
 	for i := 0; i < len(keys); i++ {
+		scope.set(f.first.name, keys[i])    //给第一个值赋值
+		scope.set(f.second.name, values[i]) //给第二个值赋值
 
-		f.scope.set(f.first.name, keys[i])    //给第一个值赋值
-		f.scope.set(f.second.name, values[i]) //给第二个值赋值
-
-		ret, oerr = f.nodes.visit()
+		ret, oerr = f.nodes.visit(scope)
 		if oerr != nil {
 			return nil, oerr
 		}
@@ -540,7 +470,7 @@ FOREACH_STATEMENT_LOOP:
 			break FOREACH_STATEMENT_LOOP
 		case *ContinueStatement:
 			// 啥都不会做...
-		case *Result:
+		case *ReturnStatement:
 			return ret, oerr
 		}
 
@@ -549,7 +479,7 @@ FOREACH_STATEMENT_LOOP:
 	return nil, nil
 }
 
-func (f *ForStatement) visit() (AstNode, error) {
+func (f *ForStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	var ret AstNode
 	var oerr error
 	g_statement_stack.push("for")
@@ -558,7 +488,7 @@ func (f *ForStatement) visit() (AstNode, error) {
 	}()
 
 	if f.condition[0] != nil { //初始化
-		_, err := f.condition[0].visit()
+		_, err := f.condition[0].visit(scope)
 		if err != nil {
 			return nil, err
 		}
@@ -566,36 +496,36 @@ func (f *ForStatement) visit() (AstNode, error) {
 FORSTATEMENT_LOOP:
 	for true {
 		/* 条件判断 */
-		cnd, err := f.condition[1].visit()
+		cnd, err := f.condition[1].visit(scope)
 		if err != nil {
 			return nil, err
 		}
 		if v, ok := cnd.(*Boolean); !ok {
 			return nil, fmt.Errorf("非布尔表达式, 位置[%v:%v:%v]",
-				f.condition[1].ofToken().file,
-				f.condition[1].ofToken().line,
-				f.condition[1].ofToken().pos)
+				f.token.file,
+				f.token.line,
+				f.token.pos)
 		} else {
 			if !v.value {
 				break
 			}
 		}
 
-		ret, oerr = f.body.visit()
+		ret, oerr = f.body.visit(scope)
 		if oerr != nil {
 			return nil, oerr
 		}
 		if ret != nil {
-			switch ret.Type() {
-			case AST_BREAK:
+			switch ret.(type) {
+			case *BreakStatement:
 				break FORSTATEMENT_LOOP
-			case AST_RESULT:
+			case *ReturnStatement:
 				return ret, oerr
 			}
 		}
 
 		if f.condition[2] != nil { /* 第三个语句求值 */
-			if _, err := f.condition[2].visit(); err != nil {
+			if _, err := f.condition[2].visit(scope); err != nil {
 				return nil, err
 			}
 		}
@@ -605,8 +535,7 @@ FORSTATEMENT_LOOP:
 
 }
 
-func (p *LocalCompoundStatement) visit() (AstNode, error) {
-
+func (p *LocalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	for i := 0; i < len(p.nodes); i++ {
 
 		switch p.nodes[i].(type) {
@@ -622,7 +551,7 @@ func (p *LocalCompoundStatement) visit() (AstNode, error) {
 			if !isFound {
 				return nil, fmt.Errorf("return不能再函数外")
 			}
-			return p.nodes[i].visit()
+			return p.nodes[i], nil
 		case *BreakStatement:
 			isFound := false
 			for !g_statement_stack.isEmpty() {
@@ -650,37 +579,31 @@ func (p *LocalCompoundStatement) visit() (AstNode, error) {
 			}
 			return p.nodes[i], nil
 		}
-		_, err := p.nodes[i].visit()
+		_, err := p.nodes[i].visit(scope)
 		if err != nil {
 			return nil, err
 		}
-
 	}
 	return nil, nil
 }
 
-func (p *GlobalCompoundStatement) visit() (AstNode, error) {
-	isPrint := false
+func (p *GlobalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
+	var isPrint bool
 	for i := 0; i < len(p.nodes); i++ {
 		switch p.nodes[i].(type) {
 		case Define, Statement:
 		default:
 			isPrint = true
 		}
-		res, err := p.nodes[i].visit()
+		res, err := p.nodes[i].visit(scope)
 		if err != nil {
 			return nil, err
 		}
 		if res != nil && isPrint {
-			if _, ok := res.(*Result); ok {
-				ss := fmt.Sprintf("%v", res)
-				if ss != "nil" {
-					fmt.Println(ss)
-				}
-			} else {
-				fmt.Printf("%v\n", res)
+			ss := fmt.Sprintf("%v", res)
+			if ss != "nil" {
+				fmt.Println(ss)
 			}
-
 		}
 
 	}

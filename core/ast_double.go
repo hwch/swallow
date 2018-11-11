@@ -27,20 +27,12 @@ func (d *Double) ofToken() *Token {
 	return d.token
 }
 
-func (d *Double) isPrint() bool {
-	return true
-}
-
-func (d *Double) Type() AstType {
-	return AST_DOUBLE
-}
-
-func (d *Double) clone() AstNode {
-	return &Double{token: d.token, value: d.value}
-}
-
-func (n *Double) visit() (AstNode, error) {
+func (n *Double) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return n, nil
+}
+
+func (n *Double) clone() AstNode {
+	return &Double{token: n.token, value: n.value}
 }
 
 func (n *Double) String() string {
@@ -57,11 +49,6 @@ func (d *Double) neg() AstNode {
 
 func (n *Double) add(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.add(val.result[0])
 	case *Integer:
 		return &Double{token: n.token, value: n.value + float64(val.value)}
 	case *String:
@@ -76,11 +63,6 @@ func (n *Double) add(ast AstNode) AstNode {
 
 func (n *Double) minus(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.minus(val.result[0])
 	case *Integer:
 		return &Double{token: n.token, value: n.value - float64(val.value)}
 	case *String:
@@ -95,11 +77,6 @@ func (n *Double) minus(ast AstNode) AstNode {
 
 func (n *Double) multi(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.multi(val.result[0])
 	case *Integer:
 		return &Double{token: n.token, value: n.value * float64(val.value)}
 	case *String:
@@ -114,11 +91,6 @@ func (n *Double) multi(ast AstNode) AstNode {
 
 func (n *Double) div(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.div(val.result[0])
 	case *Integer:
 		return &Double{token: n.token, value: n.value / float64(val.value)}
 	case *String:
@@ -133,11 +105,6 @@ func (n *Double) div(ast AstNode) AstNode {
 
 func (n *Double) great(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.great(val.result[0])
 	case *Integer:
 		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value > float64(val.value)), pos: n.token.pos, line: n.token.line, file: n.token.file})
 	case *String:
@@ -152,11 +119,6 @@ func (n *Double) great(ast AstNode) AstNode {
 
 func (n *Double) less(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.less(val.result[0])
 	case *Integer:
 		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value < float64(val.value)), pos: n.token.pos, line: n.token.line, file: n.token.file})
 	case *String:
@@ -171,11 +133,6 @@ func (n *Double) less(ast AstNode) AstNode {
 
 func (n *Double) geq(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.geq(val.result[0])
 	case *Integer:
 		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value >= float64(val.value)), pos: n.token.pos, line: n.token.line, file: n.token.file})
 	case *String:
@@ -190,11 +147,6 @@ func (n *Double) geq(ast AstNode) AstNode {
 
 func (n *Double) leq(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.leq(val.result[0])
 	case *Integer:
 		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value <= float64(val.value)), pos: n.token.pos, line: n.token.line, file: n.token.file})
 	case *String:
@@ -209,11 +161,6 @@ func (n *Double) leq(ast AstNode) AstNode {
 
 func (n *Double) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.equal(val.result[0])
 	case *Integer:
 		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value == float64(val.value)), pos: n.token.pos, line: n.token.line, file: n.token.file})
 	case *String:

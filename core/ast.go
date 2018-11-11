@@ -8,7 +8,9 @@ var g_is_global_scope bool = false
 var g_is_debug bool
 
 type Interpreter interface {
-	visit() (AstNode, error)
+	visit(scope *ScopedSymbolTable) (AstNode, error)
+	lvalue() (*ScopedSymbolTable, string, error)
+	rvalue() (AstNode, error)
 }
 
 type AstNode interface {
@@ -32,7 +34,7 @@ type AstNode interface {
 	bitand(ast AstNode) AstNode
 	lshift(ast AstNode) AstNode
 	rshift(ast AstNode) AstNode
-	attribute(isAccess bool, ast AstNode) AstNode
+	attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymbolTable, AstNode)
 	index(ast AstNode) AstNode
 	slice(begin, end AstNode) AstNode
 	neg() AstNode
@@ -41,8 +43,6 @@ type AstNode interface {
 	minusminus() AstNode
 
 	getName() string //打印用
-	ofToken() *Token //获取token
-	Type() AstType   // 获取类型
 	clone() AstNode  // 复制对象
 }
 
@@ -161,9 +161,9 @@ func (a Ast) rshift(ast AstNode) AstNode {
 	return nil
 }
 
-func (a Ast) attribute(isAccess bool, ast AstNode) AstNode {
+func (a Ast) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymbolTable, AstNode) {
 	g_error.error(fmt.Sprintf("无效运算[%v].[%v]", a, ast))
-	return nil
+	return nil, nil
 }
 
 func (a Ast) index(ast AstNode) AstNode {
@@ -195,25 +195,25 @@ func (a Ast) minusminus() AstNode {
 	return nil
 }
 
-func (a Ast) visit() (AstNode, error) {
-	return nil, fmt.Errorf("%v未实现clone()方法", a)
+func (a Ast) visit(scope *ScopedSymbolTable) (AstNode, error) {
+	return nil, fmt.Errorf("%v未实现visit(*ScopedSymbolTable)方法", a)
 }
 func (a Ast) clone() AstNode {
-	g_error.error(fmt.Sprintf("%v未实现ofToken()方法", a))
+	g_error.error(fmt.Sprintf("%v未实现clone()方法", a))
 	return nil
+}
+
+func (a Ast) lvalue() (*ScopedSymbolTable, string, error) {
+	g_error.error(fmt.Sprintf("%v未实现lvalue()方法", a))
+	return nil, "", nil
+}
+
+func (a Ast) rvalue() (AstNode, error) {
+	g_error.error(fmt.Sprintf("%v未实现rvalue()方法", a))
+	return nil, nil
 }
 
 func (a Ast) getName() string {
 	g_error.error(fmt.Sprintf("%v未实现getName()方法", a))
 	return ""
-}
-
-func (a Ast) ofToken() *Token {
-	g_error.error(fmt.Sprintf("%v未实现ofToken()方法", a))
-	return nil
-}
-
-func (a Ast) Type() AstType {
-	g_error.error(fmt.Sprintf("%v未实现Type() AstType方法", a))
-	return AST_INVALID
 }

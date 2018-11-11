@@ -6,25 +6,36 @@ import (
 
 type Dict struct {
 	Ast
-	token *Token
-	vals  map[string]AstNode
+	token  *Token
+	isInit bool
+	tmp    map[AstNode]AstNode
+	vals   map[string]AstNode
 }
 
-func NewDict(token *Token, vals map[string]AstNode) *Dict {
-	l := &Dict{token: token, vals: vals}
+func NewDict(token *Token, vals map[AstNode]AstNode) *Dict {
+	l := &Dict{token: token, tmp: vals}
 	l.v = l
 	return l
 }
 
-func (d *Dict) isPrint() bool {
-	return true
-}
+func (d *Dict) visit(scope *ScopedSymbolTable) (AstNode, error) {
+	if !d.isInit {
+		d.vals = make(map[string]AstNode)
+		for k, v := range d.tmp {
+			if key, err := k.visit(scope); err != nil {
+				return nil, err
+			} else {
+				if val, err := v.visit(scope); err != nil {
+					return nil, err
+				} else {
+					d.vals[fmt.Sprintf("%v", key)] = val
+				}
+			}
+		}
+		d.tmp = nil //释放内存
+		d.isInit = true
+	}
 
-func (d *Dict) Type() AstType {
-	return AST_DICT
-}
-
-func (d *Dict) visit() (AstNode, error) {
 	return d, nil
 }
 
@@ -52,11 +63,8 @@ func (l *Dict) String() string {
 	} else {
 		s = "{"
 		for k, v := range l.vals {
-			vv, err := v.visit()
-			if err != nil {
-				g_error.error(fmt.Sprintf("字典无效值[%v]", v))
-			}
-			s += fmt.Sprintf("%v: %v, ", k, vv)
+
+			s += fmt.Sprintf("%v: %v, ", k, v)
 		}
 		if l.vals == nil || len(l.vals) == 0 {
 			s += "}"

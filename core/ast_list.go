@@ -6,8 +6,9 @@ import (
 
 type List struct {
 	Ast
-	token *Token
-	vals  []AstNode
+	token  *Token
+	isInit bool
+	vals   []AstNode
 }
 
 func NewList(token *Token, vals []AstNode) *List {
@@ -16,16 +17,18 @@ func NewList(token *Token, vals []AstNode) *List {
 	return l
 }
 
-func (l *List) visit() (AstNode, error) {
+func (l *List) visit(scope *ScopedSymbolTable) (AstNode, error) {
+	if !l.isInit {
+		var err error
+		for i := 0; i < len(l.vals); i++ {
+			l.vals[i], err = l.vals[i].visit(scope)
+			if err != nil {
+				return nil, err
+			}
+		}
+		l.isInit = true
+	}
 	return l, nil
-}
-
-func (l *List) isPrint() bool {
-	return true
-}
-
-func (l *List) Type() AstType {
-	return AST_LIST
 }
 
 func (l *List) String() string {
@@ -45,11 +48,8 @@ func (l *List) String() string {
 	} else {
 		s = "["
 		for i := 0; i < len(l.vals); i++ {
-			v, err := l.vals[i].visit()
-			if err != nil {
-				g_error.error(fmt.Sprintf("列表无效值[%v]", l.vals[i]))
-			}
-			s += fmt.Sprintf("%v, ", v)
+
+			s += fmt.Sprintf("%v, ", l.vals[i])
 		}
 		if len(l.vals) <= 0 {
 			s += "]"
@@ -63,12 +63,7 @@ func (l *List) String() string {
 
 func (l *List) index(ast AstNode) AstNode {
 
-	_idx, err := ast.visit()
-	if err != nil {
-		g_error.error(fmt.Sprintf("%v", err))
-	}
-
-	idx, ok := _idx.(*Integer)
+	idx, ok := ast.(*Integer)
 	if !ok {
 		g_error.error(fmt.Sprintf("无效索引值[%v]", ast))
 	}

@@ -5,19 +5,19 @@ import (
 	"os"
 )
 
-func builtin_func(f *Func) (AstNode, error) {
+func builtin_func(f *Func, scope *ScopedSymbolTable) (AstNode, error) {
 	switch f.name {
 	case "print":
 		vals := make([]interface{}, len(f.params.value))
 		for i := 0; i < len(f.params.value); i++ {
-			_tmp, err := f.params.value[i].visit()
+			_tmp, err := f.params.value[i].visit(scope)
 			if err != nil {
 				return nil, err
 			}
 			vals[i] = _tmp
 		}
 		fmt.Println(vals...)
-		return NewResult(nil, []AstNode{NewEmpty(nil)}), nil
+		return &Empty{}, nil
 	case "list":
 		var iStart, iStop int64
 		switch len(f.params.value) {
@@ -46,7 +46,7 @@ func builtin_func(f *Func) (AstNode, error) {
 		for ; pos < iStop-iStart; pos++ {
 			buf[pos] = &Integer{token: nil, value: iStart + pos}
 		}
-		return NewResult(nil, []AstNode{NewTuple(nil, buf)}), nil
+		return NewTuple(nil, buf), nil
 	case "del":
 
 	case "exit":

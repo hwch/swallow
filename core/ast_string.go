@@ -18,9 +18,6 @@ func (s *String) ofToken() *Token {
 	return s.token
 }
 
-func (s *String) Type() AstType {
-	return AST_STRING
-}
 func (s *String) clone() AstNode {
 	return &String{token: s.token, value: s.value}
 }
@@ -44,7 +41,7 @@ func NewString(token *Token) *String {
 	return num
 }
 
-func (n *String) visit() (AstNode, error) {
+func (n *String) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return n, nil
 }
 
@@ -58,11 +55,6 @@ func (n *String) String() string {
 
 func (n *String) add(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.add(val.result[0])
 	case *Integer:
 		return &String{token: n.token, value: fmt.Sprintf("%d%s", n.value, val.value)}
 	case *String:
@@ -77,11 +69,6 @@ func (n *String) add(ast AstNode) AstNode {
 
 func (n *String) great(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.great(val.result[0])
 	case *Integer:
 		g_error.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
 	case *String:
@@ -96,11 +83,6 @@ func (n *String) great(ast AstNode) AstNode {
 
 func (n *String) less(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.less(val.result[0])
 	case *Integer:
 		g_error.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
 	case *String:
@@ -115,11 +97,6 @@ func (n *String) less(ast AstNode) AstNode {
 
 func (n *String) geq(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.geq(val.result[0])
 	case *Integer:
 		g_error.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
 	case *String:
@@ -134,11 +111,6 @@ func (n *String) geq(ast AstNode) AstNode {
 
 func (n *String) leq(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.leq(val.result[0])
 	case *Integer:
 		g_error.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
 	case *String:
@@ -153,11 +125,6 @@ func (n *String) leq(ast AstNode) AstNode {
 
 func (n *String) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Result:
-		if val.num != 1 {
-			g_error.error(fmt.Sprintf("右操作数个数应为1，但为%v", val.num))
-		}
-		return n.equal(val.result[0])
 	case *Integer:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	case *String:

@@ -18,7 +18,6 @@ type Func struct {
 type Param struct {
 	Ast
 	token *Token
-	scope *ScopedSymbolTable
 	flag  int //-1不限，0-无参数，>0 num个参数
 	idx   []string
 	value []AstNode
@@ -36,126 +35,69 @@ type Class struct {
 func (c *Class) define() {}
 func (f *Func) define()  {}
 
-func (c *Class) Type() AstType { return AST_CLASS }
-func (f *Func) Type() AstType  { return AST_FUNC }
-
-func NewClass(token *Token, name string, parent *Class, mems []AstNode, scope *ScopedSymbolTable) *Class {
-	cl := &Class{token: token, name: name, parent: parent, mems: mems, scope: scope}
+func NewClass(token *Token, name string, parent *Class, mems []AstNode) *Class {
+	cl := &Class{token: token, name: name, parent: parent, mems: mems}
 	cl.v = cl
 	return cl
 }
 
-func NewFunc(isBuiltin bool, token *Token, name string, params *Param, body *LocalCompoundStatement, scope *ScopedSymbolTable) *Func {
-	f := &Func{isBuiltin: isBuiltin, token: token, name: name, params: params, body: body, scope: scope}
+func NewFunc(isBuiltin bool, token *Token, name string, params *Param, body *LocalCompoundStatement) *Func {
+	f := &Func{isBuiltin: isBuiltin, token: token, name: name, params: params, body: body}
 	f.v = f
 	return f
 }
 
-func NewParam(token *Token, num int, idx []string, scope *ScopedSymbolTable) *Param {
-	p := &Param{idx: idx, scope: scope, flag: num}
+func NewParam(token *Token, num int, idx []string) *Param {
+	p := &Param{idx: idx, flag: num}
 	p.v = p
 	return p
 }
 
-func (c *Class) constructor() (*Func, error) {
-	v, ok := c.scope.class_attr(c.name)
-	if !ok {
-		return nil, fmt.Errorf("类[%v]未找到构造函数", c.name)
-	}
-	vv, iok := v.(*Func)
-
-	if !iok {
-		return nil, fmt.Errorf("类[%v]构造函数类型无效", c.name)
-	}
-	return vv, nil
-}
-
-func (c *Class) visit() (AstNode, error) {
+func (c *Class) rvalue() (AstNode, error) {
 	return c, nil
 }
 
-func (c *Class) _attribute(ast AstNode) AstNode {
-	_mem, ok := c.scope.class_attr(ast.getName())
-
-	if !ok {
-		if c.parent != nil {
-			return c.parent._attribute(ast)
-		} else {
-			return nil
-		}
-	}
-
-	return _mem
-}
-
-func (c *Class) attribute(isAccess bool, ast AstNode) AstNode {
-	var iMem AstNode
-	if !isAccess {
-		if ast.getName()[0] == '_' {
-			g_error.error(fmt.Sprintf("未在类[%v]找到成员变量[%v]", c.name, ast.getName()))
-		}
-	}
-	iMem = c._attribute(ast)
-	if iMem == nil {
-		g_error.error(fmt.Sprintf("未在类[%v]找到成员变量[%v]", c.name, ast.getName()))
-	}
-	return iMem
-}
-
-func (c *Class) init() (AstNode, error) {
-	//初始化父类
-	if c.parent != nil && c.parent.name == "Object" {
-		_, err := c.parent.init()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// 初始化成员变量
-	for i := 0; i < len(c.mems); i++ {
-		_, err := c.mems[i].visit()
-		if err != nil {
-			return nil, err
-		}
-	}
-	c.scope.set("this", c)
-
-	//调用构造函数
-	v, err := c.constructor()
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := v.evaluation(); err != nil {
-		return nil, err
-	}
+func (c *Class) visit(scope *ScopedSymbolTable) (AstNode, error) {
+	scope.set(c.name, c)
 	return c, nil
 }
 
-func (f *Func) visit() (AstNode, error) {
+func (c *Class) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymbolTable, AstNode) {
+	g_error.error(fmt.Sprintf("未在类[%v]找到成员[%v]", c.name, ast.getName()))
+	return nil, nil
+}
+
+func (c *Class) getName() string {
+	return c.name
+}
+
+func (f *Func) visit(scope *ScopedSymbolTable) (AstNode, error) {
+	scope.set(f.name, f)
 	return f, nil
 }
 
-func (f *Func) evaluation() (AstNode, error) {
+func (f *Func) evaluation(scope *ScopedSymbolTable) (AstNode, error) {
+	inScope := NewScopedSymbolTable(scope.scopeName+"_func", scope.scopeLevel+1, scope)
 
 	g_statement_stack.push("func")
 	defer func() {
 		g_statement_stack.pop()
 	}()
 
-	_, ok := f.params.visit()
+	_, ok := f.params.visit(inScope)
 	if ok != nil {
 		return nil, ok
 	}
 
-	v, err := f.body.visit()
+	v, err := f.body.visit(inScope)
 	if err != nil {
 		return nil, err
 	} else if v == nil { //当函数没有返回值时，默认返回NULL
-		return NewResult(f.body.ofToken(), []AstNode{NewEmpty(f.body.ofToken())}), nil
+		return &Empty{}, nil
 	}
 
-	return v, nil
+	//此时ReturnStatementh还没求值
+	return v.visit(inScope)
 }
 
 func (p *Param) set(parms []AstNode) {
@@ -167,16 +109,17 @@ func (p *Param) set(parms []AstNode) {
 
 }
 
-func (p *Param) visit() (interface{}, error) {
+func (p *Param) visit(scope *ScopedSymbolTable) (interface{}, error) {
 
 	cnt := len(p.value)
 
 	for i := 0; i < cnt; i++ {
-		val, err0 := p.value[i].visit()
+		val, err0 := p.value[i].visit(scope)
 		if err0 != nil {
 			return nil, err0
 		}
-		p.scope.set(p.idx[i], val)
+
+		scope.set(p.idx[i], val)
 
 	}
 
@@ -184,6 +127,7 @@ func (p *Param) visit() (interface{}, error) {
 }
 
 func (f *Func) getName() string {
+
 	return f.name
 }
 
@@ -232,7 +176,6 @@ func (f *Class) String() string {
 		} else {
 			s = fmt.Sprintf("Class %v(%v){%v}", f.name, nil, ss)
 		}
-
 	} else {
 		s = fmt.Sprintf("class %v => %p", f.name, f)
 	}
