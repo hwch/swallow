@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	// "reflect"
 )
 
 type ReturnStatement struct {
@@ -137,7 +136,7 @@ func (a *AssignStatement) variable_visit(l *Variable, r AstNode, op TokenType, s
 			ival = v //赋值
 		} else {
 			/* 等号左边求值 */
-			ll, err := l.rvalue()
+			ll, err := l.visit(scope)
 			if err != nil {
 				return nil, err
 			}
@@ -207,7 +206,7 @@ func (a *AssignStatement) tuple_visit(l *Tuple, right AstNode, op TokenType, sco
 func (a *AssignStatement) base_visit(left, right AstNode, op TokenType, scope *ScopedSymbolTable) (AstNode, error) {
 	switch l := left.(type) {
 	case *Variable: // 赋值第2类情况
-		return a.variable_visit(l, right, a.operator.valueType, scope)
+		return a.variable_visit(l, right, op, scope)
 	case *Tuple: // 赋值第1,3类情况
 		return a.tuple_visit(l, right, op, scope)
 	case *AccessOperator:

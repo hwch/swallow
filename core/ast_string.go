@@ -19,7 +19,7 @@ func (s *String) ofToken() *Token {
 }
 
 func (s *String) clone() AstNode {
-	return &String{token: s.token, value: s.value}
+	return &String{value: s.value}
 }
 
 func unQuote(s string) string {
@@ -56,11 +56,9 @@ func (n *String) String() string {
 func (n *String) add(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Integer:
-		return &String{token: n.token, value: fmt.Sprintf("%d%s", n.value, val.value)}
+		return &String{value: fmt.Sprintf("%d%s", n.value, val.value)}
 	case *String:
-		return &String{token: n.token, value: n.value + val.value}
-	case *Double:
-		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
+		return &String{value: n.value + val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v+%v", n.token, ast))
 	}
@@ -69,12 +67,8 @@ func (n *String) add(ast AstNode) AstNode {
 
 func (n *String) great(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Integer:
-		g_error.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
 	case *String:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value > val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
-	case *Double:
-		g_error.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
+		return &Boolean{value: n.value > val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v>%v", n.token, ast))
 	}
@@ -83,12 +77,8 @@ func (n *String) great(ast AstNode) AstNode {
 
 func (n *String) less(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Integer:
-		g_error.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
 	case *String:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value < val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
-	case *Double:
-		g_error.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
+		return &Boolean{value: n.value < val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v<%v", n.token, ast))
 	}
@@ -97,12 +87,8 @@ func (n *String) less(ast AstNode) AstNode {
 
 func (n *String) geq(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Integer:
-		g_error.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
 	case *String:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value >= val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
-	case *Double:
-		g_error.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
+		return &Boolean{value: n.value >= val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v>=%v", n.token, ast))
 	}
@@ -111,12 +97,8 @@ func (n *String) geq(ast AstNode) AstNode {
 
 func (n *String) leq(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Integer:
-		g_error.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
 	case *String:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value <= val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
-	case *Double:
-		g_error.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
+		return &Boolean{value: n.value <= val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v<=%v", n.token, ast))
 	}
@@ -125,12 +107,8 @@ func (n *String) leq(ast AstNode) AstNode {
 
 func (n *String) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
-	case *Integer:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	case *String:
-		return NewBoolean(&Token{valueType: BOOLEAN, value: BoolToString(n.value == val.value), pos: n.token.pos, line: n.token.line, file: n.token.file})
-	case *Double:
-		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
+		return &Boolean{value: n.value == val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
@@ -142,7 +120,7 @@ func (n *String) index(ast AstNode) AstNode {
 	if !ok {
 		g_error.error(fmt.Sprintf("无效索引值[%v]", ast))
 	}
-	return &String{token: n.token, value: n.value[idx.value : idx.value+1]}
+	return &String{value: n.value[idx.value : idx.value+1]}
 }
 
 func (n *String) slice(begin, end AstNode) AstNode {
@@ -165,14 +143,14 @@ func (n *String) slice(begin, end AstNode) AstNode {
 		g_error.error(fmt.Sprintf("无效索引值[%v]", end))
 	}
 
-	return &String{token: n.token, value: n.value[b:e]}
+	return &String{value: n.value[b:e]}
 }
 
 func (n *String) keys() []AstNode {
 	iLen := len(n.value)
 	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
-		v[i] = &Integer{token: n.token, value: int64(i)}
+		v[i] = &Integer{value: int64(i)}
 	}
 
 	return v
@@ -182,7 +160,7 @@ func (n *String) values() []AstNode {
 	iLen := len(n.value)
 	v := make([]AstNode, iLen)
 	for i := 0; i < iLen; i++ {
-		v[i] = &String{token: n.token, value: n.value[i : i+1]}
+		v[i] = &String{value: n.value[i : i+1]}
 	}
 
 	return v

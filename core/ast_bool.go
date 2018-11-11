@@ -23,13 +23,8 @@ func NewBoolean(token *Token) *Boolean {
 	return b
 }
 
-func NewBooleanByValue(token *Token, v bool) *Boolean {
-
-	return &Boolean{token: token, value: v}
-}
-
 func (n *Boolean) clone() AstNode {
-	return &Boolean{value: n.value, token: n.token}
+	return &Boolean{value: n.value}
 }
 
 func (n *Boolean) visit(scope *ScopedSymbolTable) (AstNode, error) {
@@ -54,7 +49,7 @@ func (n *Boolean) String() string {
 func (n *Boolean) equal(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Boolean:
-		return &Boolean{value: n.value == val.value, token: n.token}
+		return &Boolean{value: n.value == val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
@@ -64,7 +59,7 @@ func (n *Boolean) equal(ast AstNode) AstNode {
 func (n *Boolean) noteq(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Boolean:
-		return &Boolean{value: n.value != val.value, token: n.token}
+		return &Boolean{value: n.value != val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
@@ -74,7 +69,7 @@ func (n *Boolean) noteq(ast AstNode) AstNode {
 func (n *Boolean) and(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Boolean:
-		return &Boolean{value: n.value && val.value, token: n.token}
+		return &Boolean{value: n.value && val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
@@ -84,7 +79,7 @@ func (n *Boolean) and(ast AstNode) AstNode {
 func (n *Boolean) or(ast AstNode) AstNode {
 	switch val := ast.(type) {
 	case *Boolean:
-		return &Boolean{value: n.value || val.value, token: n.token}
+		return &Boolean{value: n.value || val.value}
 	default:
 		g_error.error(fmt.Sprintf("不支持%v==%v", n.token, ast))
 	}
