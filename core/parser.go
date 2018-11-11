@@ -757,24 +757,14 @@ func (p *Parser) class_def() *Class {
 	token := p.currentToken
 	cname := p.variable()
 
-	var parent *Class
+	var parent *Variable
 	if p.currentToken.valueType == INHERIT {
 		p.eat(INHERIT,
 			fmt.Sprintf("期望是'@',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		pname := p.variable()
-		if _parent, ok := g_symbols.lookup(pname.name); !ok {
-			g_error.error(fmt.Sprintf("继承类%v未定义", pname.name))
-		} else {
-			v, iok := _parent.(*Class)
-			if !iok {
-				g_error.error(fmt.Sprintf("继承类%v类型错误", _parent))
-			}
-			parent = v
-		}
+		parent = p.variable()
+
 	} else {
-		v, _ := g_builtin.builtin("Object")
-		vv, _ := v.(*Class)
-		parent = vv
+		parent = &Variable{token: p.currentToken, name: "Object"}
 	}
 	p.eat(LBRCS,
 		fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
@@ -782,6 +772,7 @@ func (p *Parser) class_def() *Class {
 	max := 8
 	cnt := 0
 	init := make([]AstNode, max)
+	isExist := false
 	for p.currentToken.valueType != RBRCS {
 		if cnt >= max {
 			max += 8
@@ -794,6 +785,9 @@ func (p *Parser) class_def() *Class {
 			p.eat(KEY_FUNC,
 				fmt.Sprintf("期望是'func',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 			init[cnt] = p.func_def()
+			if init[cnt].getName() == cname.name {
+				isExist = true
+			}
 			cnt++
 		} else {
 			myVar := p.expr()
@@ -814,10 +808,15 @@ func (p *Parser) class_def() *Class {
 		}
 
 	}
+	if !isExist {
+		init[cnt] = NewFunc(false, token, cname.name,
+			&Param{token: token, flag: 0}, &LocalCompoundStatement{token: token})
+		cnt++
+	}
 	p.eat(RBRCS,
 		fmt.Sprintf("期望是'}',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 
-	return NewClass(token, cname.name, parent, init[:cnt])
+	return NewClass(token, cname, parent, init[:cnt])
 }
 
 func (p *Parser) func_def() *Func {

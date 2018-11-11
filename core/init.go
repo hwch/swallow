@@ -13,7 +13,7 @@ func init() {
 
 	inScope := NewScopedSymbolTable(g_symbols.scopeName+"_class", g_symbols.scopeLevel+1, g_symbols)
 	obj := &Class{scope: inScope,
-		name: "Ojbect",
+		name: &Variable{name: "Ojbect"},
 		mems: []AstNode{}}
 	cls_init_func := &Func{scope: inScope,
 		name:      "Object",

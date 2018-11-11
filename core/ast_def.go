@@ -25,18 +25,20 @@ type Param struct {
 
 type Class struct {
 	Ast
-	token  *Token
-	scope  *ScopedSymbolTable
-	name   string
-	parent *Class
-	mems   []AstNode
+	isCheck bool
+	token   *Token
+	scope   *ScopedSymbolTable
+	name    *Variable
+	pname   *Variable
+	parent  *Class
+	mems    []AstNode
 }
 
 func (c *Class) define() {}
 func (f *Func) define()  {}
 
-func NewClass(token *Token, name string, parent *Class, mems []AstNode) *Class {
-	cl := &Class{token: token, name: name, parent: parent, mems: mems}
+func NewClass(token *Token, name, parent *Variable, mems []AstNode) *Class {
+	cl := &Class{token: token, name: name, pname: parent, mems: mems}
 	cl.v = cl
 	return cl
 }
@@ -58,7 +60,23 @@ func (c *Class) rvalue() (AstNode, error) {
 }
 
 func (c *Class) visit(scope *ScopedSymbolTable) (AstNode, error) {
-	scope.set(c.name, c)
+	if !c.isCheck {
+		var v AstNode
+		var ok bool
+		if v, ok = scope.lookup(c.pname.name); !ok {
+			if v, ok = g_builtin.builtin(c.pname.name); !ok {
+				g_error.error(fmt.Sprintf("未找到类[%v]定义", c.pname.name))
+			}
+
+		}
+		if vv, ok := v.(*Class); ok {
+			c.parent = vv
+		} else {
+			g_error.error(fmt.Sprintf("类[%v]继承[%v]无效", c.name.name, c.pname.name))
+		}
+		c.isCheck = true
+	}
+	scope.set(c.name.name, c)
 	return c, nil
 }
 
@@ -68,7 +86,7 @@ func (c *Class) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymbolT
 }
 
 func (c *Class) getName() string {
-	return c.name
+	return c.name.name
 }
 
 func (f *Func) visit(scope *ScopedSymbolTable) (AstNode, error) {

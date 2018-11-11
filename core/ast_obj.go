@@ -29,11 +29,12 @@ func (c *ClassObj) instance(scope *ScopedSymbolTable, level int) (AstNode, error
 		inScope = scope
 	} else {
 		inScope = NewScopedSymbolTable(scope.scopeName+"_class", scope.scopeLevel+1, scope)
+		c.symtab = inScope
 	}
 
 	//初始化父类
 	if c.parent != nil {
-		super, err := c.parent.instance(scope, level+1)
+		super, err := c.parent.instance(inScope, level+1)
 		if err != nil {
 			return nil, err
 		}
@@ -74,11 +75,11 @@ func (c *ClassObj) init(scope *ScopedSymbolTable) (*ClassObj, error) {
 }
 
 func (c *ClassObj) constructor() (*Func, error) {
-	v, _ := c.symtab.class_attr(c.cls.name)
+	v, _ := c.symtab.class_attr(c.cls.name.name)
 	vv, iok := v.(*Func)
 
 	if !iok {
-		return nil, fmt.Errorf("类[%v]构造函数类型无效", c.cls.name)
+		return nil, fmt.Errorf("类[%v]构造函数类型无效", c.cls.name.name)
 	}
 
 	return vv, nil
@@ -94,7 +95,7 @@ func (c *ClassObj) rvalue() (AstNode, error) {
 
 func (c *ClassObj) getName() string {
 
-	return c.cls.name
+	return c.cls.name.name
 }
 
 func (c *ClassObj) _attribute(ast AstNode, scope *ScopedSymbolTable) AstNode {
@@ -113,7 +114,6 @@ func (c *ClassObj) _attribute(ast AstNode, scope *ScopedSymbolTable) AstNode {
 
 func (c *ClassObj) attribute(ast AstNode, scope *ScopedSymbolTable) (*ScopedSymbolTable, AstNode) {
 	var iMem AstNode
-
 	iMem = c._attribute(ast, scope)
 	if iMem == nil {
 		g_error.error(fmt.Sprintf("未在对象[%v]找到成员变量[%v]", c.cls.name, ast.getName()))

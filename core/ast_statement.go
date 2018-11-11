@@ -589,6 +589,7 @@ func (p *LocalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, error
 func (p *GlobalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	var isPrint bool
 	for i := 0; i < len(p.nodes); i++ {
+		isPrint = false
 		switch p.nodes[i].(type) {
 		case Define, Statement:
 		default:
@@ -598,7 +599,7 @@ func (p *GlobalCompoundStatement) visit(scope *ScopedSymbolTable) (AstNode, erro
 		if err != nil {
 			return nil, err
 		}
-		if res != nil && isPrint {
+		if res != nil && isPrint && p.ofToken().file == "<stdin>" {
 			ss := fmt.Sprintf("%v", res)
 			if ss != "nil" {
 				fmt.Println(ss)
