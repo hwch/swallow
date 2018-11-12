@@ -165,3 +165,7 @@ func (n *String) values() []AstNode {
 
 	return v
 }
+
+func (n *String) isTrue() bool {
+	return len(n.value) != 0
+}

@@ -202,5 +202,8 @@ func (f *Class) String() string {
 }
 
 func (f *Func) ofToken() *Token  { return f.token }
-func (f *Param) ofToken() *Token { return f.token }
-func (f *Class) ofToken() *Token { return f.token }
+func (p *Param) ofToken() *Token { return p.token }
+func (c *Class) ofToken() *Token { return c.token }
+
+func (f *Func) isTrue() bool  { return true }
+func (c *Class) isTrue() bool { return true }

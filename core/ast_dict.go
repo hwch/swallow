@@ -40,6 +40,10 @@ func (d *Dict) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return d, nil
 }
 
+func (d *Dict) isTrue() bool {
+	return len(d.vals) != 0
+}
+
 func (d *Dict) index(ast AstNode) AstNode {
 	v, ok := d.vals[fmt.Sprintf("%v", ast)]
 	if !ok {
@@ -48,14 +52,14 @@ func (d *Dict) index(ast AstNode) AstNode {
 	return v
 }
 
-func (l *Dict) String() string {
+func (d *Dict) String() string {
 	s := ""
 	if gIsDebug {
 		s = fmt.Sprintf("Dict{")
-		for k, v := range l.vals {
+		for k, v := range d.vals {
 			s += fmt.Sprintf("%v: %v, ", k, v)
 		}
-		if l.vals == nil || len(l.vals) == 0 {
+		if d.vals == nil || len(d.vals) == 0 {
 			s += "}"
 		} else {
 			s = s[:len(s)-2] + "}"
@@ -63,11 +67,11 @@ func (l *Dict) String() string {
 
 	} else {
 		s = "{"
-		for k, v := range l.vals {
+		for k, v := range d.vals {
 
 			s += fmt.Sprintf("%v: %v, ", k, v)
 		}
-		if l.vals == nil || len(l.vals) == 0 {
+		if d.vals == nil || len(d.vals) == 0 {
 			s += "}"
 		} else {
 			s = s[:len(s)-2] + "}"
@@ -76,23 +80,23 @@ func (l *Dict) String() string {
 	return s
 }
 
-func (l *Dict) keys() []AstNode {
-	iLen := len(l.vals)
+func (d *Dict) keys() []AstNode {
+	iLen := len(d.vals)
 	v := make([]AstNode, iLen)
 	i := 0
-	for k, _ := range l.vals {
-		v[i] = &String{token: l.ofToken(), value: k}
+	for k := range d.vals {
+		v[i] = &String{value: k}
 		i++
 	}
 	return v
 }
 
-func (l *Dict) values() []AstNode {
-	iLen := len(l.vals)
+func (d *Dict) values() []AstNode {
+	iLen := len(d.vals)
 
 	v := make([]AstNode, iLen)
 	i := 0
-	for _, k := range l.vals {
+	for _, k := range d.vals {
 		v[i] = k
 		i++
 	}

@@ -289,7 +289,6 @@ func (a *AssignStatement) baseVisit(left, right AstNode, op TokenType, scope *Sc
 }
 
 func (a *AssignStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
-
 	return a.baseVisit(a.left, a.right, a.operator.valueType, scope)
 }
 
@@ -334,16 +333,12 @@ func (i *IfStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 		}
 	}
 	//判断表达式
-	vv, err := i.epxr.rvalue()
+	vv, err := i.epxr.visit(scope)
 	if err != nil {
 		return nil, err
 	}
-	bl, ok := vv.(*Boolean)
-	if !ok {
-		return nil, fmt.Errorf("无效表达式:%v", vv)
-	}
 
-	if bl.value { // 第一个if
+	if vv.isTrue() { // 第一个if
 		return i.body.visit(scope)
 	}
 	// 其他elif 或 else
@@ -355,16 +350,12 @@ func (i *IfStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 				return nil, err
 			}
 		}
-		vv, err := v.epxr.rvalue()
+		vv, err := v.epxr.visit(scope)
 		if err != nil {
 			return nil, err
 		}
-		bl, ok := vv.(*Boolean)
-		if !ok {
-			return nil, fmt.Errorf("无效表达式:%v", vv)
-		}
 
-		if bl.value {
+		if vv.isTrue() {
 			return v.body.visit(scope)
 		}
 	}
@@ -372,8 +363,7 @@ func (i *IfStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return nil, nil
 }
 
-func (f *ForeachStatement) visitList(scope *ScopedSymbolTable) (AstNode, error) {
-	iFunc := f.expr.(*FuncCallOperator)
+func (f *ForeachStatement) visitList(iFunc *FuncCallOperator, scope *ScopedSymbolTable) (AstNode, error) {
 	var iStart, iStop int64
 	iTotal := len(iFunc.params)
 
@@ -409,10 +399,10 @@ func (f *ForeachStatement) visitList(scope *ScopedSymbolTable) (AstNode, error) 
 FOREACH_STATEMENT_LOOP1:
 	for ; pos < iStop-iStart; pos++ {
 		if f.first.name != "_" {
-			scope.set(f.first.name, &Integer{token: f.first.token, value: pos}) //给第一个值赋值
+			scope.set(f.first.name, &Integer{value: pos}) //给第一个值赋值
 		}
 		if f.second.name != "_" {
-			scope.set(f.second.name, &Integer{token: f.second.token, value: iStart + pos}) //给第二个值赋值
+			scope.set(f.second.name, &Integer{value: iStart + pos}) //给第二个值赋值
 		}
 
 		ret, oerr = f.nodes.visit(scope)
@@ -422,8 +412,6 @@ FOREACH_STATEMENT_LOOP1:
 		switch ret.(type) {
 		case *BreakStatement:
 			break FOREACH_STATEMENT_LOOP1
-		case *ContinueStatement:
-			// 啥都不会做...
 		case *ReturnStatement:
 			return ret, oerr
 		}
@@ -442,7 +430,7 @@ func (f *ForeachStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 
 	if _f, ok := f.expr.(*FuncCallOperator); ok {
 		if _f.getName() == "list" {
-			return f.visitList(scope)
+			return f.visitList(_f, scope)
 		}
 	}
 	_expr, err := f.expr.rvalue()
@@ -458,8 +446,12 @@ func (f *ForeachStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	}
 FOREACH_STATEMENT_LOOP:
 	for i := 0; i < len(keys); i++ {
-		scope.set(f.first.name, keys[i])    //给第一个值赋值
-		scope.set(f.second.name, values[i]) //给第二个值赋值
+		if f.first.name != "_" {
+			scope.set(f.first.name, keys[i]) //给第一个值赋值
+		}
+		if f.second.name != "_" {
+			scope.set(f.second.name, values[i]) //给第二个值赋值
+		}
 
 		ret, oerr = f.nodes.visit(scope)
 		if oerr != nil {
@@ -468,8 +460,6 @@ FOREACH_STATEMENT_LOOP:
 		switch ret.(type) {
 		case *BreakStatement:
 			break FOREACH_STATEMENT_LOOP
-		case *ContinueStatement:
-			// 啥都不会做...
 		case *ReturnStatement:
 			return ret, oerr
 		}
@@ -500,14 +490,8 @@ FORSTATEMENT_LOOP:
 		if err != nil {
 			return nil, err
 		}
-		v, ok := cnd.(*Boolean)
-		if !ok {
-			return nil, fmt.Errorf("非布尔表达式, 位置[%v:%v:%v]",
-				f.token.file,
-				f.token.line,
-				f.token.pos)
-		}
-		if !v.value {
+
+		if !cnd.isTrue() {
 			break
 		}
 

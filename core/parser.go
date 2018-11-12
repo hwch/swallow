@@ -66,8 +66,8 @@ func (p *Parser) dict() AstNode {
 		p.eat(LPRNTH,
 			fmt.Sprintf("期望是'(',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		node = p.expr()
-		if node == nil { //TODO: 是否报错待定
-			gError.error(fmt.Sprintf("不能为空,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		if node == nil { //返回空只读数组
+			node = NewTuple(p.currentToken, nil)
 		}
 
 		p.eat(RPRNTH,
@@ -414,13 +414,21 @@ func (p *Parser) tuple() AstNode {
 
 func (p *Parser) expr() AstNode {
 	token := p.currentToken
-	// node := p.tuple(scope)
 
 	cnt := 0
 	max := 8
 	vals := make([]AstNode, max)
 
-	for p.currentToken.valueType != EOF {
+	vals[cnt] = p.tuple()
+	cnt++
+	isTuple := false
+	for p.currentToken.valueType == COMMA {
+		isTuple = true
+		if vals[cnt-1] == nil {
+			gError.error(fmt.Sprintf("无效语法,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		}
+		p.eat(COMMA,
+			fmt.Sprintf("期望是',',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		if cnt >= max {
 			max += 8
 			_tmp := make([]AstNode, max)
@@ -428,18 +436,16 @@ func (p *Parser) expr() AstNode {
 			vals = _tmp
 		}
 		vals[cnt] = p.tuple()
-		cnt++
-		if p.currentToken.valueType != COMMA {
+
+		if vals[cnt] == nil {
 			break
 		}
+		cnt++
 
-		p.eat(COMMA,
-			fmt.Sprintf("期望是',',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 	}
-	if cnt <= 1 {
+	if cnt == 1 && !isTuple {
 		return vals[0]
 	}
-
 	return NewTuple(token, vals[:cnt])
 }
 

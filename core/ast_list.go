@@ -30,7 +30,9 @@ func (l *List) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	}
 	return l, nil
 }
-
+func (l *List) isTrue() bool {
+	return len(l.vals) != 0
+}
 func (l *List) String() string {
 	s := ""
 	if gIsDebug {

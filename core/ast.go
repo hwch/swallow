@@ -45,6 +45,7 @@ type AstNode interface {
 	getName() string //打印用
 	clone() AstNode  // 复制对象
 	rvalue() (AstNode, error)
+	isTrue() bool //条件判断
 }
 
 // Statement 用做鉴定是否是语句
@@ -208,9 +209,9 @@ func (a Ast) clone() AstNode {
 	return nil
 }
 
-func (a Ast) lvalue() (*ScopedSymbolTable, string, error) {
-	gError.error(fmt.Sprintf("%v未实现lvalue()方法", a))
-	return nil, "", nil
+func (a Ast) isTrue() bool {
+	gError.error(fmt.Sprintf("%v未实现isTrue()方法", a))
+	return false
 }
 
 func (a Ast) rvalue() (AstNode, error) {

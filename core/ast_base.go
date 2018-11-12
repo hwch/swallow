@@ -361,6 +361,9 @@ func (e *Empty) visit(scope *ScopedSymbolTable) (AstNode, error) {
 func (e *Empty) clone() AstNode {
 	return &Empty{}
 }
+func (e *Empty) isTrue() bool {
+	return false
+}
 
 func (e *Empty) getName() string {
 	return "nil"

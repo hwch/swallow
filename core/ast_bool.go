@@ -29,6 +29,10 @@ func (n *Boolean) clone() AstNode {
 	return &Boolean{value: n.value}
 }
 
+func (n *Boolean) isTrue() bool {
+	return n.value
+}
+
 func (n *Boolean) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return n, nil
 }

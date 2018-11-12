@@ -31,6 +31,10 @@ func (n *Double) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return n, nil
 }
 
+func (d *Double) isTrue() bool {
+	return d.value != 0.0
+}
+
 func (n *Double) clone() AstNode {
 	return &Double{value: n.value}
 }

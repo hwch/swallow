@@ -115,3 +115,7 @@ func (t *Tuple) values() []AstNode {
 func (t *Tuple) ofToken() *Token {
 	return t.token
 }
+
+func (t *Tuple) isTrue() bool {
+	return len(t.vals) != 0
+}

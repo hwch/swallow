@@ -139,3 +139,7 @@ func (c *ClassObj) String() string {
 
 	return s
 }
+
+func (c *ClassObj) isTrue() bool {
+	return true
+}
