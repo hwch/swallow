@@ -7,11 +7,12 @@ import (
 var gIsGlobalScope bool
 var gIsDebug bool
 
+// Interpreter swallow运行时接口，必须实现
 type Interpreter interface {
 	visit(scope *ScopedSymbolTable) (AstNode, error)
-	rvalue() (AstNode, error)
 }
 
+// AstNode 运行时运算接口
 type AstNode interface {
 	Interpreter
 	add(ast AstNode) AstNode
@@ -43,24 +44,29 @@ type AstNode interface {
 
 	getName() string //打印用
 	clone() AstNode  // 复制对象
+	rvalue() (AstNode, error)
 }
 
+// Statement 用做鉴定是否是语句
 type Statement interface {
 	AstNode
 	statement()
 }
 
+// Define 鉴定是否是函数定义或类定义
 type Define interface {
 	AstNode
 	define()
 }
 
+// Iterator foreach 操作对象必须实现此接口
 type Iterator interface {
 	AstNode
 	keys() []AstNode
 	values() []AstNode
 }
 
+// Ast 语法解析的基类
 type Ast struct {
 	v interface{}
 }

@@ -4,12 +4,14 @@ import (
 	"fmt"
 )
 
+// Boolean 基础类型布尔类型
 type Boolean struct {
 	Ast
 	token *Token
 	value bool
 }
 
+// NewBoolean 返回 Boolean 对象
 func NewBoolean(token *Token) *Boolean {
 	b := &Boolean{token: token}
 	val := token.value

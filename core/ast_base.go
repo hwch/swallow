@@ -4,48 +4,56 @@ import (
 	"fmt"
 )
 
+// BinOperator 处理二元操作 如 *，/，% 等
 type BinOperator struct {
 	Ast
 	token       *Token
 	left, right AstNode
 }
 
+// UnaryOperator 一元操作 如 -，+，~，! 等
 type UnaryOperator struct {
 	Ast
 	token *Token
 	node  AstNode
 }
 
+// SelfAfterOperator 自增自减操作
 type SelfAfterOperator struct {
 	Ast
 	operator *Token
 	node     AstNode
 }
 
+// SliceOperator 切片操作
 type SliceOperator struct {
 	Ast
 	token             *Token
 	left, node, right AstNode
 }
 
+// AccessOperator 数组操作
 type AccessOperator struct {
 	Ast
 	token       *Token
 	left, right AstNode
 }
 
+// AttributeOperator 取类成员操作
 type AttributeOperator struct {
 	Ast
 	token       *Token
 	left, right AstNode
 }
 
+// Variable 变量定义
 type Variable struct {
 	Ast
 	token *Token
 	name  string
 }
 
+// FuncCallOperator 函数调用
 type FuncCallOperator struct {
 	Ast
 	token  *Token
@@ -53,54 +61,66 @@ type FuncCallOperator struct {
 	params []AstNode
 }
 
+// Empty 空值 nil
 type Empty struct {
 	Ast
 	name  string
 	token *Token
 }
 
+// NewEmpty 返回Empty对象
 func NewEmpty(token *Token) *Empty {
 	return &Empty{token: token}
 }
 
+// NewFuncCallOperator 返回FuncCallOperator对象
 func NewFuncCallOperator(token *Token, funcName AstNode, params []AstNode) *FuncCallOperator {
 	return &FuncCallOperator{name: funcName, params: params, token: token}
 }
 
+// NewBinOperator 返回 BinOperator 对象
 func NewBinOperator(left AstNode, oper *Token, right AstNode) *BinOperator {
 	bin := &BinOperator{left: left, right: right, token: oper}
 	bin.v = bin
 	return bin
 }
+
+// NewAccessOperator 返回 AccessOperator 对象
 func NewAccessOperator(oper *Token, left AstNode, right AstNode) *AccessOperator {
 	bin := &AccessOperator{left: left, right: right, token: oper}
 	bin.v = bin
 	return bin
 }
 
+// NewAttributeOperator 返回 AttributeOperator 对象
 func NewAttributeOperator(oper *Token, left AstNode, right AstNode) *AttributeOperator {
 	bin := &AttributeOperator{left: left, right: right, token: oper}
 	bin.v = bin
 	return bin
 }
+
+// NewSliceOperator 返回 SliceOperator 对象
 func NewSliceOperator(token *Token, node, left, right AstNode) *SliceOperator {
 	trd := &SliceOperator{token: token, left: left, node: node, right: right}
 	trd.v = trd
 	return trd
 }
 
+// NewUnaryOperator 返回 UnaryOperator 对象
 func NewUnaryOperator(oper *Token, node AstNode) *UnaryOperator {
 	unary := &UnaryOperator{token: oper, node: node}
 	unary.v = unary
 	return unary
 }
 
+// NewSelfAfterOperator 返回 SelfAfterOperator 对象
 func NewSelfAfterOperator(oper *Token, node AstNode) *SelfAfterOperator {
 	unary := &SelfAfterOperator{operator: oper, node: node}
 	unary.v = unary
 	return unary
 }
 
+// NewVariable 返回 Variable 对象
 func NewVariable(token *Token) *Variable {
 	varbl := &Variable{token: token, name: token.value}
 	varbl.v = varbl
@@ -388,17 +408,9 @@ func (e *Empty) String() string {
 }
 
 func (e *Empty) ofToken() *Token             { return e.token }
-func (e *Variable) ofToken() *Token          { return e.token }
-func (e *UnaryOperator) ofToken() *Token     { return e.token }
-func (e *BinOperator) ofToken() *Token       { return e.token }
-func (e *FuncCallOperator) ofToken() *Token  { return e.token }
-func (e *SliceOperator) ofToken() *Token     { return e.token }
-func (e *SelfAfterOperator) ofToken() *Token { return e.operator }
-
-func (e *Empty) Type() AstType             { return AST_NIL }
-func (e *Variable) Type() AstType          { return AST_VAR }
-func (e *UnaryOperator) Type() AstType     { return AST_EXPR }
-func (e *BinOperator) Type() AstType       { return AST_BIN_OP }
-func (e *FuncCallOperator) Type() AstType  { return AST_FUNC_CALL }
-func (e *SliceOperator) Type() AstType     { return AST_EXPR }
-func (e *SelfAfterOperator) Type() AstType { return AST_EXPR }
+func (v *Variable) ofToken() *Token          { return v.token }
+func (u *UnaryOperator) ofToken() *Token     { return u.token }
+func (b *BinOperator) ofToken() *Token       { return b.token }
+func (f *FuncCallOperator) ofToken() *Token  { return f.token }
+func (s *SliceOperator) ofToken() *Token     { return s.token }
+func (s *SelfAfterOperator) ofToken() *Token { return s.operator }

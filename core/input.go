@@ -2,6 +2,7 @@ package core
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	// "sync"
 )
 
 var gIsExit bool
@@ -39,7 +39,7 @@ func linuxRead(str *string) error {
 }
 
 func macosRead(str *string) error {
-	return fmt.Errorf("未实现...")
+	return errors.New("未实现")
 }
 
 func windowsRead(str *string) error {
@@ -66,21 +66,22 @@ func windowsRead(str *string) error {
 	*str = string(ret)
 	return nil
 }
-func scanf(str *string) (err error) {
+func scanf(str *string) error {
 
 	if runtime.GOOS == "windows" {
-		err = windowsRead(str)
+		return windowsRead(str)
 	} else if runtime.GOOS == "linux" {
-		err = linuxRead(str)
+		return linuxRead(str)
 	} else if runtime.GOOS == "darwin" {
-		err = macosRead(str)
+		return macosRead(str)
 	}
 
 	log.Fatalf("Unsupport platform '%v'", runtime.GOOS)
 
-	return
+	return nil
 }
 
+// ReadStdin 处理从标准输入读入源程序
 func ReadStdin() {
 
 	buf := ""
@@ -112,6 +113,7 @@ func ReadStdin() {
 
 }
 
+// ReadFile 处理从文件读入源程序
 func ReadFile(fstr string) {
 	if fstr == "<stdin>" {
 		fmt.Printf("无效文件名:%s", fstr)
