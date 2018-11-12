@@ -7,3 +7,4 @@
 .idea/watcherTasks.xml
 .idea/workspace.xml
 *.vscode
+.vscode/launch.json
