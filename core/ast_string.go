@@ -23,17 +23,45 @@ func (s *String) clone() AstNode {
 }
 
 func unQuote(s string) string {
-	if s[0] == '"' || s[0] == '\'' {
-		s = s[1:]
-	}
 	iLen := len(s)
-	if s[iLen-1] == '"' || s[iLen-1] == '\'' {
-		s = s[:len(s)-1]
+	tmp := make([]byte, iLen-2)
+	j := 0
+	for i := 1; i < iLen-1; i++ { //跳过首尾 " 字符
+		if (s[i] == '\\') && ((i + 1) < iLen-1) {
+			i++
+			switch s[i] {
+			case 'a':
+				tmp[j] = '\a'
+			case 'b':
+				tmp[j] = '\b'
+			case 't':
+				tmp[j] = '\t'
+			case 'n':
+				tmp[j] = '\n'
+			case 'v':
+				tmp[j] = '\v'
+			case 'f':
+				tmp[j] = '\f'
+			case 'r':
+				tmp[j] = '\r'
+			case '"':
+				tmp[j] = '"'
+			case '\\':
+				tmp[j] = '\\'
+			default:
+				i--
+				tmp[j] = s[i]
+			}
+		} else {
+			tmp[j] = s[i]
+		}
+		j++
 	}
 
-	return s
+	return string(tmp[:j])
 }
 
+// NewString 对特殊字符做处理
 func NewString(token *Token) *String {
 	num := &String{token: token}
 	num.value = unQuote(num.token.value)
@@ -41,6 +69,13 @@ func NewString(token *Token) *String {
 	return num
 }
 
+// NewPrimeString 创建原始字符串，不做转义
+func NewPrimeString(token *Token) *String {
+	num := &String{token: token}
+	num.value = num.token.value[1 : len(num.token.value)-1]
+	num.v = num
+	return num
+}
 func (n *String) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	return n, nil
 }

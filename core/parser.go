@@ -50,6 +50,10 @@ func (p *Parser) dict() AstNode {
 		p.eat(STRING,
 			fmt.Sprintf("无效字符串,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		node = NewString(token)
+	case CHAR:
+		p.eat(CHAR,
+			fmt.Sprintf("无效字符串,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
+		node = NewPrimeString(token)
 	case DOUBLE:
 		p.eat(DOUBLE,
 			fmt.Sprintf("无效浮点数,位置[%v:%v:%v]\n", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
@@ -421,9 +425,11 @@ func (p *Parser) expr() AstNode {
 
 	vals[cnt] = p.tuple()
 	cnt++
-	isTuple := false
+
+	if p.currentToken.valueType != COMMA {
+		return vals[0]
+	}
 	for p.currentToken.valueType == COMMA {
-		isTuple = true
 		if vals[cnt-1] == nil {
 			gError.error(fmt.Sprintf("无效语法,位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		}
@@ -443,9 +449,7 @@ func (p *Parser) expr() AstNode {
 		cnt++
 
 	}
-	if cnt == 1 && !isTuple {
-		return vals[0]
-	}
+
 	return NewTuple(token, vals[:cnt])
 }
 

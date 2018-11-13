@@ -179,7 +179,7 @@ func (l *Lexer) getChar() *Token {
 			l.nextLine()
 			continue
 		}
-		if l.text[l.curPos] == '\'' && l.text[l.curPos-1] != '\\' {
+		if l.text[l.curPos] == '\'' {
 			break
 		}
 		l.curPos++
@@ -188,7 +188,7 @@ func (l *Lexer) getChar() *Token {
 	savePos := l.savePos
 	l.savePos = l.curPos
 	dvalue := l.text[savePos:l.curPos]
-	return NewToken(STRING, dvalue, line, savePos, l.file)
+	return NewToken(CHAR, dvalue, line, savePos, l.file)
 }
 
 func (l *Lexer) getString() *Token {
