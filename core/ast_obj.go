@@ -143,3 +143,7 @@ func (c *ClassObj) String() string {
 func (c *ClassObj) isTrue() bool {
 	return true
 }
+
+func (c *ClassObj) ofValue() interface{} {
+	return c.String()
+}

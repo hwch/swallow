@@ -45,6 +45,7 @@ type AstNode interface {
 	getName() string //打印用
 	clone() AstNode  // 复制对象
 	rvalue() (AstNode, error)
+	ofValue() interface{}
 	isTrue() bool //条件判断
 }
 
@@ -63,8 +64,7 @@ type Define interface {
 // Iterator foreach 操作对象必须实现此接口
 type Iterator interface {
 	AstNode
-	keys() []AstNode
-	values() []AstNode
+	iterator() (key []AstNode, value []AstNode)
 }
 
 // Ast 语法解析的基类
@@ -217,6 +217,11 @@ func (a Ast) isTrue() bool {
 func (a Ast) rvalue() (AstNode, error) {
 	gError.error(fmt.Sprintf("%v未实现rvalue()方法", a))
 	return nil, nil
+}
+
+func (a Ast) ofValue() interface{} {
+	gError.error(fmt.Sprintf("%v未实现ofValue()方法", a))
+	return nil
 }
 
 func (a Ast) getName() string {

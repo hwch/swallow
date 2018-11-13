@@ -1,7 +1,7 @@
 package core
 
 func StringToBool(s string) bool {
-	if s == "True" {
+	if s == "true" {
 		return true
 	}
 	return false
@@ -9,7 +9,7 @@ func StringToBool(s string) bool {
 
 func BoolToString(b bool) string {
 	if b {
-		return "True"
+		return "true"
 	}
-	return "False"
+	return "false"
 }

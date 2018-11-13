@@ -241,10 +241,13 @@ func (a *AssignStatement) baseVisit(left, right AstNode, op TokenType, scope *Sc
 			if err != nil {
 				return nil, err
 			}
+			// TODO: 字典key类型待定
 			idx := fmt.Sprintf("%v", _idx)
-			val.vals[idx], err = right.visit(scope)
+			tmp, err := right.visit(scope)
 			if err != nil {
 				return nil, err
+			} else {
+				val.vals[idx] = &DictValue{key: _idx, value: tmp}
 			}
 
 		default:
@@ -433,17 +436,16 @@ func (f *ForeachStatement) visit(scope *ScopedSymbolTable) (AstNode, error) {
 			return f.visitList(_f, scope)
 		}
 	}
-	_expr, err := f.expr.rvalue()
+	expr, err := f.expr.visit(scope)
 	if err != nil {
 		return nil, err
 	}
-	switch expr := _expr.(type) {
-	case Iterator:
-		keys = expr.keys()
-		values = expr.values()
-	default:
+	if v, ok := expr.(Iterator); ok {
+		keys, values = v.iterator()
+	} else {
 		return nil, fmt.Errorf("[%v]不支持foreach操作", f.expr)
 	}
+
 FOREACH_STATEMENT_LOOP:
 	for i := 0; i < len(keys); i++ {
 		if f.first.name != "_" {

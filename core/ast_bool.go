@@ -39,10 +39,10 @@ func (n *Boolean) visit(scope *ScopedSymbolTable) (AstNode, error) {
 
 func (n *Boolean) _String() string {
 	if n.value {
-		return "True"
+		return "true"
 	}
 
-	return "False"
+	return "false"
 }
 
 func (n *Boolean) String() string {
@@ -94,4 +94,8 @@ func (n *Boolean) or(ast AstNode) AstNode {
 
 func (b *Boolean) ofToken() *Token {
 	return b.token
+}
+
+func (b *Boolean) ofValue() interface{} {
+	return b.value
 }

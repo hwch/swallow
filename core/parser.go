@@ -579,7 +579,7 @@ func (p *Parser) ifStatement() *IfStatement {
 		token = p.currentToken
 		p.eat(KEY_ELSE,
 			fmt.Sprintf("期望是'else',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
-		bl := NewBoolean(&Token{value: "True", valueType: BOOLEAN})
+		bl := NewBoolean(&Token{value: "true", valueType: BOOLEAN})
 		p.eat(LBRCS,
 			fmt.Sprintf("期望是'{',位置[%v:%v:%v]", p.currentToken.file, p.currentToken.line, p.currentToken.pos))
 		block := p.statementLocal()

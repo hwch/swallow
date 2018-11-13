@@ -181,26 +181,24 @@ func (n *String) slice(begin, end AstNode) AstNode {
 	return &String{value: n.value[b:e]}
 }
 
-func (n *String) keys() []AstNode {
+func (n *String) iterator() (key []AstNode, value []AstNode) {
 	iLen := len(n.value)
-	v := make([]AstNode, iLen)
-	for i := 0; i < iLen; i++ {
-		v[i] = &Integer{value: int64(i)}
+	key = make([]AstNode, iLen)
+	value = make([]AstNode, iLen)
+	i := 0
+	for k, v := range n.value {
+		key[i] = &Integer{value: int64(k)}
+		value[i] = &String{value: string([]rune{v})}
+		i++
 	}
 
-	return v
-}
-
-func (n *String) values() []AstNode {
-	iLen := len(n.value)
-	v := make([]AstNode, iLen)
-	for i := 0; i < iLen; i++ {
-		v[i] = &String{value: n.value[i : i+1]}
-	}
-
-	return v
+	return
 }
 
 func (n *String) isTrue() bool {
 	return len(n.value) != 0
+}
+
+func (n *String) ofValue() interface{} {
+	return n.value
 }

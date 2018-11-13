@@ -248,3 +248,7 @@ func (n *Integer) rshift(ast AstNode) AstNode {
 	}
 	return nil
 }
+
+func (n *Integer) ofValue() interface{} {
+	return n.value
+}

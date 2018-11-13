@@ -92,24 +92,18 @@ func (t *Tuple) slice(begin, end AstNode) AstNode {
 	return NewTuple(t.token, t.vals[b:e])
 }
 
-func (t *Tuple) keys() []AstNode {
+func (t *Tuple) iterator() (key []AstNode, value []AstNode) {
 	iLen := len(t.vals)
-	v := make([]AstNode, iLen)
-	for i := 0; i < iLen; i++ {
-		v[i] = &Integer{token: t.ofToken(), value: int64(i)}
+	key = make([]AstNode, iLen)
+	value = make([]AstNode, iLen)
+	i := 0
+	for k, v := range t.vals {
+		key[i] = &Integer{value: int64(k)}
+		value[i] = v
+		i++
 	}
-	return v
-}
 
-func (t *Tuple) values() []AstNode {
-	iLen := len(t.vals)
-
-	v := make([]AstNode, iLen)
-	for i := 0; i < iLen; i++ {
-		v[i] = t.vals[i]
-
-	}
-	return v
+	return
 }
 
 func (t *Tuple) ofToken() *Token {
@@ -118,4 +112,8 @@ func (t *Tuple) ofToken() *Token {
 
 func (t *Tuple) isTrue() bool {
 	return len(t.vals) != 0
+}
+
+func (t *Tuple) ofValue() interface{} {
+	return t.String()
 }

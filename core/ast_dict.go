@@ -4,12 +4,17 @@ import (
 	"fmt"
 )
 
+type DictValue struct {
+	key, value AstNode
+}
+
 type Dict struct {
 	Ast
 	token  *Token
 	isInit bool
 	tmp    map[AstNode]AstNode
-	vals   map[string]AstNode
+	vals   map[string]*DictValue
+	// vals map[AstNode]AstNode
 }
 
 func NewDict(token *Token, vals map[AstNode]AstNode) *Dict {
@@ -20,7 +25,7 @@ func NewDict(token *Token, vals map[AstNode]AstNode) *Dict {
 
 func (d *Dict) visit(scope *ScopedSymbolTable) (AstNode, error) {
 	if !d.isInit {
-		d.vals = make(map[string]AstNode)
+		d.vals = make(map[string]*DictValue)
 		for k, v := range d.tmp {
 			key, err := k.visit(scope)
 			if err != nil {
@@ -30,7 +35,7 @@ func (d *Dict) visit(scope *ScopedSymbolTable) (AstNode, error) {
 			if err != nil {
 				return nil, err
 			}
-			d.vals[fmt.Sprintf("%v", key)] = val
+			d.vals[fmt.Sprintf("%v", key)] = &DictValue{key: key, value: val}
 
 		}
 		d.tmp = nil //释放内存
@@ -46,10 +51,15 @@ func (d *Dict) isTrue() bool {
 
 func (d *Dict) index(ast AstNode) AstNode {
 	v, ok := d.vals[fmt.Sprintf("%v", ast)]
+	// v, ok := d.vals[ast]
 	if !ok {
 		gError.error(fmt.Sprintf("无效KEY值[%v]", ast))
 	}
-	return v
+	return v.value
+}
+
+func (d *Dict) ofValue() interface{} {
+	return d.String()
 }
 
 func (d *Dict) String() string {
@@ -57,7 +67,7 @@ func (d *Dict) String() string {
 	if gIsDebug {
 		s = fmt.Sprintf("Dict{")
 		for k, v := range d.vals {
-			s += fmt.Sprintf("%v: %v, ", k, v)
+			s += fmt.Sprintf("%v: %v, ", k, v.value)
 		}
 		if d.vals == nil || len(d.vals) == 0 {
 			s += "}"
@@ -69,7 +79,7 @@ func (d *Dict) String() string {
 		s = "{"
 		for k, v := range d.vals {
 
-			s += fmt.Sprintf("%v: %v, ", k, v)
+			s += fmt.Sprintf("%v: %v, ", k, v.value)
 		}
 		if d.vals == nil || len(d.vals) == 0 {
 			s += "}"
@@ -80,27 +90,17 @@ func (d *Dict) String() string {
 	return s
 }
 
-func (d *Dict) keys() []AstNode {
+func (d *Dict) iterator() (key []AstNode, value []AstNode) {
 	iLen := len(d.vals)
-	v := make([]AstNode, iLen)
+	key = make([]AstNode, iLen)
+	value = make([]AstNode, iLen)
 	i := 0
-	for k := range d.vals {
-		v[i] = &String{value: k}
+	for _, v := range d.vals {
+		key[i] = v.key
+		value[i] = v.value
 		i++
 	}
-	return v
-}
-
-func (d *Dict) values() []AstNode {
-	iLen := len(d.vals)
-
-	v := make([]AstNode, iLen)
-	i := 0
-	for _, k := range d.vals {
-		v[i] = k
-		i++
-	}
-	return v
+	return
 }
 
 func (d *Dict) ofToken() *Token {

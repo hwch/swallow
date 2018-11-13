@@ -158,3 +158,7 @@ func (n *Double) equal(ast AstNode) AstNode {
 	}
 	return nil
 }
+
+func (n *Double) ofValue() interface{} {
+	return n.value
+}

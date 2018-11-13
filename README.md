@@ -25,9 +25,9 @@
 ## 循环语句---><br>
 	```
 	for a=0;a<10;a++{复合语句}
-	for ;True;a++ {复合语句}
-	for ;True; {复合语句}
-	for True {复合语句}
+	for ;true;a++ {复合语句}
+	for ;true; {复合语句}
+	for true {复合语句}
 
 	foreach k,v=list {复合语句} (list 取值范围<数组，元组，字典，字符串>)
 	```

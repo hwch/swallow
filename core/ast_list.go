@@ -96,25 +96,24 @@ func (l *List) slice(begin, end AstNode) AstNode {
 	return NewList(l.token, l.vals[b:e])
 }
 
-func (l *List) keys() []AstNode {
+func (l *List) iterator() (key []AstNode, value []AstNode) {
 	iLen := len(l.vals)
-	v := make([]AstNode, iLen)
-	for i := 0; i < iLen; i++ {
-		v[i] = &Integer{token: l.ofToken(), value: int64(i)}
+	key = make([]AstNode, iLen)
+	value = make([]AstNode, iLen)
+	i := 0
+	for k, v := range l.vals {
+		key[i] = &Integer{value: int64(k)}
+		value[i] = v
+		i++
 	}
-	return v
-}
 
-func (l *List) values() []AstNode {
-	iLen := len(l.vals)
-
-	v := make([]AstNode, iLen)
-	for i := 0; i < iLen; i++ {
-		v[i] = l.vals[i]
-	}
-	return v
+	return
 }
 
 func (l *List) ofToken() *Token {
 	return l.token
+}
+
+func (l *List) ofValue() interface{} {
+	return l.String()
 }

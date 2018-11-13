@@ -421,9 +421,9 @@ func (l *Lexer) judgeType(dvalue string) TokenType {
 		typ = KEY_GLOBAL
 	case "import":
 		typ = KEY_IMPORT
-	case "True":
+	case "true":
 		typ = BOOLEAN
-	case "False":
+	case "false":
 		typ = BOOLEAN
 	case "nil":
 		typ = NULL

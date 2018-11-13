@@ -14,7 +14,7 @@ func builtinFunc(f *Func, scope *ScopedSymbolTable) (AstNode, error) {
 			if err != nil {
 				return nil, err
 			}
-			vals[i] = _tmp
+			vals[i] = _tmp.ofValue()
 		}
 		fmt.Println(vals...)
 		return &Empty{}, nil

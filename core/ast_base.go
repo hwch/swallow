@@ -411,6 +411,7 @@ func (e *Empty) String() string {
 }
 
 func (e *Empty) ofToken() *Token             { return e.token }
+func (e *Empty) ofValue() interface{}        { return "nil" }
 func (v *Variable) ofToken() *Token          { return v.token }
 func (u *UnaryOperator) ofToken() *Token     { return u.token }
 func (b *BinOperator) ofToken() *Token       { return b.token }
